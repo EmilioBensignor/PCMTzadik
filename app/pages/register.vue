@@ -2,7 +2,7 @@
     <DefaultSection>
         <HeadingH1>Registrarse</HeadingH1>
 
-        <FormContainer class="gap-4 lg:gap-7" @submit.prevent="signUp">
+        <FormLayout class="gap-4 lg:gap-7" @submit.prevent="signUp">
             <FormFieldsContainer>
                 <FormTextField v-model="form.email" label="Correo electrónico" id="email" type="email"
                     placeholder="stevejobs@gmail.com" autocomplete="email" :error="errors.email" required
@@ -27,14 +27,14 @@
                 {{ errorMsg }}
             </div>
 
-            <ButtonPrimary class="lg:!px-48" :disabled="loading || !isValid" @click="signUp">
+            <ButtonPrimary type="submit" class="lg:!px-48" :disabled="loading || !isValid">
                 <span v-if="!loading">Registrarse</span>
-                <span v-else class="flex items-center gap-2">
+                <span v-else class="flex justify-center items-center gap-2">
                     <Icon name="tabler:loader-2" class="animate-spin" />
                     Registrando...
                 </span>
             </ButtonPrimary>
-        </FormContainer>
+        </FormLayout>
     </DefaultSection>
 </template>
 

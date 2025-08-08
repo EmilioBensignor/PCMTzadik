@@ -2,7 +2,7 @@
     <DefaultSection>
         <HeadingH1>Restablecer contraseña</HeadingH1>
 
-        <FormContainer class="gap-4 lg:gap-7" @submit.prevent="handleResetPassword">
+        <FormLayout @submit.prevent="handleResetPassword"  class="gap-4 lg:gap-7">
             <FormFieldsContainer>
                 <FormPasswordField v-model="form.password" label="Nueva contraseña" id="password"
                     placeholder="Ingresa tu nueva contraseña" :error="errors.password" required 
@@ -17,14 +17,14 @@
                 {{ errorMsg }}
             </div>
 
-            <ButtonPrimary  :disabled="loading || !isValid" @click="handleResetPassword">
+            <ButtonPrimary type="submit">
                 <span v-if="!loading">Actualizar contraseña</span>
-                <span v-else class="flex items-center gap-2">
+                <span v-else class="flex justify-center items-center gap-2">
                     <Icon name="tabler:loader-2" class="animate-spin" />
                     Actualizando...
                 </span>
             </ButtonPrimary>
-        </FormContainer>
+        </FormLayout>
     </DefaultSection>
 </template>
 

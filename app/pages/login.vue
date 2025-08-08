@@ -2,14 +2,14 @@
     <DefaultSection>
         <HeadingH1>Iniciar sesión</HeadingH1>
 
-        <FormContainer @submit.prevent="handleSubmit" class="gap-4 lg:gap-7">
+        <FormLayout @submit.prevent="handleSignIn" class="gap-4 lg:gap-7">
             <FormFieldsContainer>
-                <FormTextField v-model="formData.email" label="Correo electrónico" id="correo-electronico" type="email"
-                    placeholder="stevejobs" autocomplete="username" :error="errors.email" required
+                <FormTextField v-model="form.email" label="Correo electrónico" id="correo-electronico" type="email"
+                    placeholder="stevejobs@gmail.com" autocomplete="username" :error="errors.email" required
                     @blur="validateEmail" />
 
-                <FormPasswordField v-model="formData.password" label="Contraseña" id="contrasena"
-                    placeholder="Ingresa tu contraseña" :error="errors.password" required @blur="validatePassword" />
+                <FormPasswordField v-model="form.password" label="Contraseña" id="contrasena"
+                    placeholder="********" :error="errors.password" required @blur="validatePassword" />
             </FormFieldsContainer>
 
             <NuxtLink :to="ROUTE_NAMES.FORGOT_PASSWORD" class="text-dark font-light underline">
@@ -20,15 +20,18 @@
                     class="text-dark font-light underline">
                     registrate</NuxtLink>
             </p>
+            <FormError v-if="errorMsg">
+                {{ errorMsg }}
+            </FormError>
 
-            <ButtonPrimary type="submit" :disabled="isLoading">
+            <ButtonPrimary type="submit">
                 <span v-if="!isLoading">Ingresar</span>
-                <span v-else class="flex items-center gap-2">
+                <span v-else class="flex justify-center items-center gap-2">
                     <Icon name="tabler:loader-2" class="animate-spin" />
                     Iniciando sesión...
                 </span>
             </ButtonPrimary>
-        </FormContainer>
+        </FormLayout>
     </DefaultSection>
 </template>
 
@@ -39,9 +42,10 @@ definePageMeta({
     layout: "auth",
 });
 
-const router = useRouter()
+const client = useSupabaseClient();
+const router = useRouter();
 
-const formData = reactive({
+const form = reactive({
     email: '',
     password: ''
 })
@@ -52,18 +56,12 @@ const errors = reactive({
 })
 
 const isLoading = ref(false)
-
-const isFormValid = computed(() => {
-    return formData.email.length > 0 &&
-        formData.password.length > 0 &&
-        !errors.email &&
-        !errors.password
-})
+const errorMsg = ref('');
 
 const validateEmail = () => {
-    if (!formData.email) {
+    if (!form.email) {
         errors.email = 'El correo electrónico es requerido'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
         errors.email = 'Formato de correo electrónico inválido'
     } else {
         errors.email = ''
@@ -71,23 +69,24 @@ const validateEmail = () => {
 }
 
 const validatePassword = () => {
-    if (!formData.password) {
+    if (!form.password) {
         errors.password = 'La contraseña es requerida'
     } else {
         errors.password = ''
     }
 }
 
-watch(() => formData.email, () => {
+watch(() => form.email, () => {
     if (errors.email) errors.email = ''
 })
 
-watch(() => formData.password, () => {
+watch(() => form.password, () => {
     if (errors.password) errors.password = ''
 })
 
-const handleSubmit = async () => {
-    isLoading.value = true
+const handleSignIn = async () => {
+    isLoading.value = true;
+    errorMsg.value = '';
 
     validateEmail()
     validatePassword()
@@ -98,9 +97,21 @@ const handleSubmit = async () => {
     }
 
     try {
-        // Logica login
+        localStorage.setItem('lastLoginEmail', form.email);
+        errorMsg.value = '';
+        const { error } = await client.auth.signInWithPassword({
+            email: form.email,
+            password: form.password,
+            options: {
+                staySignedIn: true
+            }
+        });
 
-        await router.push(ROUTE_NAMES.HOME)
+        if (error) {
+            errorMsg.value = handleSupabaseError(error);
+        }
+
+        router.push(ROUTE_NAMES.HOME)
 
     } catch (error) {
         console.error('Error en login:', error)

@@ -2,7 +2,7 @@
     <DefaultSection>
         <HeadingH1>Restablecer contraseña</HeadingH1>
 
-        <FormContainer class="gap-4 lg:gap-7">
+        <FormLayout class="gap-4 lg:gap-7">
             <div class="flex flex-col items-center gap-4 lg:gap-6">
                 <p class="text-center text-dark lg:text-xl">
                     Se envió un correo electrónico a <strong>{{ email }}</strong> para poder
@@ -20,7 +20,7 @@
                     Volver a Iniciar Sesión
                 </ButtonPrimary>
             </div>
-        </FormContainer>
+        </FormLayout>
     </DefaultSection>
 </template>
 

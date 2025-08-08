@@ -1,7 +1,7 @@
 <template>
-    <FormContainer @submit.prevent="$emit('submit')">
+    <form class="w-full max-w-md lg:max-w-[50rem] flex flex-col items-center" @submit="$emit('submit', $event)">
         <slot />
-    </FormContainer>
+    </form>
 </template>
 
 <script setup>

@@ -1,7 +1,6 @@
 <template>
     <DefaultSection>
-        <NuxtLink :to="ROUTE_NAMES.LOGIN"
-            class="flex items-center gap-2 self-start text-dark font-light no-underline">
+        <NuxtLink :to="ROUTE_NAMES.LOGIN" class="flex items-center gap-2 self-start text-dark font-light no-underline">
             <Icon name="tabler:arrow-left" size="1.25rem" />
             Volver a Iniciar sesión
         </NuxtLink>
@@ -13,7 +12,7 @@
                 Ingrese el correo electrónico de su cuenta para poder reestablecer su contraseña.
             </p>
 
-            <FormContainer class="gap-4 lg:gap-7" @submit.prevent="handleForgotPassword">
+            <FormLayout @submit.prevent="handleForgotPassword" class="gap-4 lg:gap-7">
                 <FormFieldsContainer>
                     <FormTextField v-model="form.email" label="Correo electrónico" id="email" type="email"
                         placeholder="stevejobs@gmail.com" autocomplete="email" :error="errors.email" required
@@ -26,12 +25,12 @@
 
                 <ButtonPrimary :disabled="loading || !isValid" @click="handleForgotPassword">
                     <span v-if="!loading">Restablecer contraseña</span>
-                    <span v-else class="flex items-center gap-2">
+                    <span v-else class="flex justify-center items-center gap-2">
                         <Icon name="tabler:loader-2" class="animate-spin" />
                         Enviando...
                     </span>
                 </ButtonPrimary>
-            </FormContainer>
+            </FormLayout>
         </div>
     </DefaultSection>
 </template>
