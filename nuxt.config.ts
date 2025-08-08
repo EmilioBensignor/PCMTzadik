@@ -1,0 +1,79 @@
+// https://nuxt.com/docs/api/configuration/nuxt-config
+export default defineNuxtConfig({
+  compatibilityDate: '2025-07-15',
+  devtools: { enabled: true },
+  css: ['~/assets/css/main.css'],
+  modules: [
+    '@nuxt/fonts',
+    '@nuxt/icon',
+    '@nuxt/image',
+    '@nuxtjs/tailwindcss',
+    '@nuxtjs/supabase'
+  ],
+  app: {
+    head: {
+      meta: [
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'format-detection', content: 'telephone=no' },
+        { name: 'mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+        { name: 'apple-mobile-web-app-title', content: 'Andy Loisch' }
+      ],
+      link: [
+        { rel: 'apple-touch-icon', href: '/pwa-icons/apple-touch-icon.png' }
+      ]
+    }
+  },
+  supabase: {
+    redirectOptions: {
+      login: '/login',
+      callback: '/callback',
+      exclude: [
+        '/login',
+        '/register',
+        '/forgot-password',
+        '/forgot-password-confirmation',
+        '/reset-password',
+      ]
+    },
+  },
+  // cookieOptions: {
+  //   maxAge: 60 * 60 * 8,
+  //   secure: process.env.NODE_ENV === 'production'
+  // },
+  // clientOptions: {
+  //   auth: {
+  //     persistSession: true,
+  //     detectSessionInUrl: true,
+  //   }
+  // },
+  fonts: {
+    defaults: {
+      weights: [300, 400, 500, 700, 900],
+    }
+  },
+  // plugins: [
+  //   { src: '~/plugins/preload-data.js', mode: 'client' }
+  // ],
+  icon: {
+    size: '1rem',
+    class: 'tablerIcon',
+    serverBundle: {
+      collections: ['tabler'],
+    }
+  },
+  vite: {
+    optimizeDeps: {
+      include: ['pinia']
+    },
+    build: {
+      cssCodeSplit: true,
+      chunkSizeWarningLimit: 1000,
+    },
+    server: {
+      fs: {
+        strict: false
+      }
+    }
+  },
+})
