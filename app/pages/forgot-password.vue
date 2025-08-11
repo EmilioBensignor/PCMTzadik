@@ -12,7 +12,7 @@
                 Ingrese el correo electrónico de su cuenta para poder reestablecer su contraseña.
             </p>
 
-            <FormLayout @submit.prevent="handleForgotPassword" class="gap-4 lg:gap-7">
+            <FormLayout @submit.prevent="handleForgotPassword">
                 <FormFieldsContainer>
                     <FormTextField v-model="form.email" label="Correo electrónico" id="email" type="email"
                         placeholder="stevejobs@gmail.com" autocomplete="email" :error="errors.email" required

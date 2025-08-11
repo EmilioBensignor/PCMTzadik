@@ -2,14 +2,14 @@
     <DefaultSection>
         <HeadingH1>Iniciar sesión</HeadingH1>
 
-        <FormLayout @submit.prevent="handleSignIn" class="gap-4 lg:gap-7">
+        <FormLayout @submit.prevent="handleSignIn">
             <FormFieldsContainer>
                 <FormTextField v-model="form.email" label="Correo electrónico" id="correo-electronico" type="email"
                     placeholder="stevejobs@gmail.com" autocomplete="username" :error="errors.email" required
                     @blur="validateEmail" />
 
-                <FormPasswordField v-model="form.password" label="Contraseña" id="contrasena"
-                    placeholder="********" :error="errors.password" required @blur="validatePassword" />
+                <FormPasswordField v-model="form.password" label="Contraseña" id="contrasena" placeholder="********"
+                    :error="errors.password" required @blur="validatePassword" />
             </FormFieldsContainer>
 
             <NuxtLink :to="ROUTE_NAMES.FORGOT_PASSWORD" class="text-dark font-light underline">

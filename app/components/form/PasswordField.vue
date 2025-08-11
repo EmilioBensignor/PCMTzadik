@@ -1,6 +1,6 @@
 <template>
     <div class="w-full flex flex-col gap-2">
-        <FormLabel :id="id" v-if="label">{{ label }}</FormLabel>
+        <FormLabel :id="id" :required="required" v-if="label">{{ label }}</FormLabel>
 
         <div
             class="relative bg-light border border-dark rounded-md lg:text-xl font-light text-dark lg:placeholder:text-xl placeholder:font-light placeholder:text-gray-dark py-3 px-[0.875rem]">

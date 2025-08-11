@@ -2,7 +2,7 @@
     <DefaultSection>
         <HeadingH1>Registrarse</HeadingH1>
 
-        <FormLayout class="gap-4 lg:gap-7" @submit.prevent="signUp">
+        <FormLayout @submit.prevent="signUp">
             <FormFieldsContainer>
                 <FormTextField v-model="form.email" label="Correo electrónico" id="email" type="email"
                     placeholder="stevejobs@gmail.com" autocomplete="email" :error="errors.email" required
@@ -19,7 +19,8 @@
                     placeholder="********" autocomplete="new-password" :error="errors.passwordConfirm" required
                     @blur="validatePasswordConfirm" />
             </FormFieldsContainer>
-            <p class="flex items-center gap-1">Si ya tienes una cuenta,<NuxtLink :to="ROUTE_NAMES.LOGIN" class="text-dark font-light underline">
+            <p class="flex items-center gap-1">Si ya tienes una cuenta,<NuxtLink :to="ROUTE_NAMES.LOGIN"
+                    class="text-dark font-light underline">
                     inicia
                     sesión</NuxtLink>
             </p>

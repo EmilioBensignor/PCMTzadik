@@ -8,4 +8,9 @@ export const ROUTE_NAMES = {
     RESET_PASSWORD: "/reset-password",
     // Auth
     HOME: '/',
+    // Productos
+    PRODUCTOS: '/productos',
+    PRODUCTOS_CREAR: '/productos/crear',
+    PRODUCTOS_EDITAR: (id) => `/productos/crear?edit=${id}`,
+    PRODUCTOS_CATEGORIA: (nombre) => `/productos/${encodeURIComponent(nombre)}`
 };

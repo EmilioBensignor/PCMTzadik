@@ -80,7 +80,7 @@ const inputId = computed(() => props.id)
 watch(() => props.modelValue, (newValue) => {
     if (newValue && newValue !== imagePreview.value) {
         imagePreview.value = newValue
-        fileName.value = newValue.split('/').pop() || 'imagen.jpg'
+        fileName.value = typeof newValue === 'string' ? newValue.split('/').pop() || 'imagen.jpg' : 'imagen.jpg'
     }
 }, { immediate: true })
 

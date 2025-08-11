@@ -5,21 +5,29 @@
         <div v-if="isOpen" @click="$emit('close')" class="fixed inset-0 bg-black/50 z-40"></div>
     </Transition>
 
-    <!-- Drawer -->
     <Transition enter-active-class="transition-transform duration-300 ease-out" enter-from-class="-translate-x-full"
         enter-to-class="translate-x-0" leave-active-class="transition-transform duration-300 ease-in"
         leave-from-class="translate-x-0" leave-to-class="-translate-x-full">
         <nav v-if="isOpen"
-            class="w-[65%] max-w-80 h-full flex flex-col justify-between fixed top-0 left-0 bg-primary z-50 transform py-6 px-3">
-            <div class="flex items-center justify-between text-light px-3">
-                <p class="text-xl font-semibold">Tzadik</p>
-                <button @click="$emit('close')" class="p-2 rounded-md hover:bg-gray-100 transition-colors"
-                    aria-label="Cerrar menú">
-                    <Icon name="tabler:x" class="w-6 h-6" />
-                </button>
+            class="w-[65%] max-w-80 h-full flex flex-col justify-between fixed top-0 left-0 z-50 bg-primary transform py-6 px-3">
+            <div>
+                <div class="flex items-center justify-between text-light px-3">
+                    <p class="text-xl font-semibold">Tzadik</p>
+                    <button @click="$emit('close')" class="w-12 h-12 flex justify-center items-center"
+                        aria-label="Cerrar menú">
+                        <Icon name="tabler:x" class="w-6 h-6" />
+                    </button>
+                </div>
+                <NuxtLink v-for="(item, index) in menu" :key="index" :to="item.route"
+                    class="flex items-center gap-3 text-light hover:bg-white/10 rounded-lg p-3 transition-colors duration-300"
+                    @click="$emit('close')">
+                    <Icon :name="`tabler:${item.icon}`" class="w-5 h-5" />
+                    <span class="font-medium">{{ item.title }}</span>
+                </NuxtLink>
             </div>
 
-            <button @click="handleSignOut" :disabled="loggingOut" class="flex items-center gap-3 text-light font-light p-3">
+            <button @click="handleSignOut" :disabled="loggingOut"
+                class="flex items-center gap-3 text-light font-light p-3">
                 <Icon v-if="!loggingOut" name="tabler:logout" class="w-5 h-5" />
                 <Icon v-else name="tabler:loader-2" class="w-5 h-5 animate-spin" />
                 <span class="font-medium">
@@ -42,11 +50,22 @@ const props = defineProps({
 
 const emit = defineEmits(['close'])
 
-// Estado para logout
+const menu = [
+    {
+        route: ROUTE_NAMES.HOME,
+        title: "Inicio",
+        icon: "home",
+    },
+    {
+        route: ROUTE_NAMES.PRODUCTOS,
+        title: "Productos",
+        icon: "package",
+    }
+]
+
 const loggingOut = ref(false)
 const router = useRouter()
 
-// Función para cerrar sesión
 async function handleSignOut() {
     if (loggingOut.value) return;
 
@@ -59,7 +78,6 @@ async function handleSignOut() {
 
         localStorage.removeItem('lastLoginEmail');
 
-        // Cerrar drawer antes de redirigir
         emit('close');
 
         router.push(ROUTE_NAMES.LOGIN);
@@ -70,7 +88,6 @@ async function handleSignOut() {
     }
 }
 
-// Cerrar drawer al presionar Escape
 onMounted(() => {
     const handleEscapeKey = (e) => {
         if (e.key === 'Escape' && props.isOpen) {
@@ -85,7 +102,6 @@ onMounted(() => {
     })
 })
 
-// Prevenir scroll del body cuando el drawer está abierto
 watch(() => props.isOpen, (isOpen) => {
     if (import.meta.client) {
         if (isOpen) {

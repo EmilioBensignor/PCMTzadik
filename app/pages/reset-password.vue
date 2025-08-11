@@ -2,7 +2,7 @@
     <DefaultSection>
         <HeadingH1>Restablecer contraseña</HeadingH1>
 
-        <FormLayout @submit.prevent="handleResetPassword"  class="gap-4 lg:gap-7">
+        <FormLayout @submit.prevent="handleResetPassword">
             <FormFieldsContainer>
                 <FormPasswordField v-model="form.password" label="Nueva contraseña" id="password"
                     placeholder="Ingresa tu nueva contraseña" :error="errors.password" required 
