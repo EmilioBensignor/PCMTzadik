@@ -5,7 +5,7 @@
         <FormLayout @submit.prevent="handleResetPassword">
             <FormFieldsContainer>
                 <FormPasswordField v-model="form.password" label="Nueva contraseña" id="password"
-                    placeholder="Ingresa tu nueva contraseña" :error="errors.password" required 
+                    placeholder="Ingresa tu nueva contraseña" :error="errors.password" required
                     @blur="validatePassword" />
 
                 <FormPasswordField v-model="form.confirmPassword" label="Confirmar contraseña" id="confirmPassword"
@@ -80,7 +80,7 @@ const validatePassword = () => {
     } else {
         errors.password = ''
     }
-    
+
     if (form.confirmPassword) {
         validateConfirmPassword()
     }
@@ -127,8 +127,11 @@ const handleResetPassword = async () => {
             form.password = ''
             form.confirmPassword = ''
 
-            console.log('Contraseña actualizada exitosamente')
-            
+            success('¡Contraseña actualizada exitosamente!', {
+                title: 'Contraseña cambiada',
+                duration: 7000
+            })
+
             await router.push(ROUTE_NAMES.LOGIN)
         }
 

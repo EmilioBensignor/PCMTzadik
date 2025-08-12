@@ -49,6 +49,7 @@ definePageMeta({
 
 const client = useSupabaseClient()
 const router = useRouter()
+const { success } = useNotification()
 
 const form = reactive({
     displayName: '',
@@ -292,8 +293,10 @@ const signUp = async () => {
         form.password = ''
         form.passwordConfirm = ''
 
-        // Mostrar mensaje de éxito y redirigir
-        console.log('Registro exitoso, redirigiendo al login')
+        success('¡Cuenta creada exitosamente! Revisa tu correo para confirmar tu cuenta.', {
+            title: 'Registro exitoso',
+            duration: 10000
+        })
 
         await router.push(ROUTE_NAMES.LOGIN)
 

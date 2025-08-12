@@ -98,6 +98,7 @@ import categorias from '~/shared/categorias.js'
 import productos from '~/shared/productos.js'
 
 const route = useRoute()
+const { success, error } = useNotification()
 const selectedCategory = ref('')
 const selectedSubcategories = ref([])
 const isSubmitting = ref(false)
@@ -207,21 +208,26 @@ const handleSubmit = async () => {
             const index = productos.findIndex(p => p.id === editingProductId.value)
             if (index !== -1) {
                 productos[index] = { ...productos[index], ...formattedData, id: editingProductId.value }
-                console.log('Producto actualizado:', productos[index])
+                success('Producto actualizado exitosamente', {
+                    title: 'Actualización completada'
+                })
                 navigateTo(ROUTE_NAMES.PRODUCTOS_CATEGORIA(selectedCategory.value))
             }
         } else {
             const maxId = Math.max(...productos.map(p => p.id), 0)
             formattedData.id = maxId + 1
             productos.push(formattedData)
-            console.log('Producto creado:', formattedData)
+            success('Producto creado exitosamente', {
+                title: 'Producto agregado'
+            })
             resetForm()
-            alert('Producto creado exitosamente!')
         }
 
     } catch (error) {
         console.error('Error al procesar producto:', error)
-        alert(`Error al ${isEditing.value ? 'actualizar' : 'crear'} el producto. Inténtalo de nuevo.`)
+        error(`Error al ${isEditing.value ? 'actualizar' : 'crear'} el producto. Inténtalo de nuevo.`, {
+            title: 'Error'
+        })
     } finally {
         isSubmitting.value = false
     }

@@ -4,4 +4,5 @@
         <slot />
     </DefaultMain>
     <DefaultFooter />
+    <NotificationContainer />
 </template>
