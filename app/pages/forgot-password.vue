@@ -7,7 +7,7 @@
 
         <HeadingH1>Restablecer contraseña</HeadingH1>
 
-        <div class="flex flex-col gap-4 lg:gap-6">
+        <div class="flex flex-col items-center gap-4 lg:gap-6">
             <p class="text-dark lg:text-xl">
                 Ingrese el correo electrónico de su cuenta para poder reestablecer su contraseña.
             </p>
