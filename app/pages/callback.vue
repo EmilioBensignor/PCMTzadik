@@ -20,6 +20,17 @@ const route = useRoute()
 
 onMounted(async () => {
     try {
+        // Verificar parámetros de URL primero
+        const type = route.query.type || route.hash.includes('type=recovery')
+        const isRecovery = type === 'recovery' || route.hash.includes('type=recovery')
+        
+        console.log('Callback params:', { 
+            query: route.query, 
+            hash: route.hash, 
+            type, 
+            isRecovery 
+        })
+
         const { data, error } = await client.auth.getSession()
 
         if (error) {
@@ -29,14 +40,14 @@ onMounted(async () => {
         }
 
         if (data.session) {
-            const type = route.query.type
-            const next = route.query.next
-
-            if (type === 'recovery') {
+            // Si es recovery, forzar ir a reset-password independientemente
+            if (isRecovery) {
+                console.log('Redirigiendo a reset-password')
                 await router.push(ROUTE_NAMES.RESET_PASSWORD)
                 return
             }
 
+            const next = route.query.next
             if (next) {
                 await router.push(next)
                 return
