@@ -8,12 +8,12 @@
             <HeadingH2 class="text-center mt-4">¿Estás seguro que queres eliminar "{{ itemName }}" de {{ tableName }}?
             </HeadingH2>
             <p class="font-light lg:text-xl">Esta acción es irreversible</p>
-            <div class="flex justify-center flex-wrap items-center gap-5">
-                <ButtonPrimary @click="$emit('cancel')" class="!bg-gray-mid !text-dark">
+            <div class="w-full flex justify-center flex-wrap items-center gap-5">
+                <ButtonPrimary @click="$emit('cancel')" class="!w-max !bg-gray-mid !text-dark">
                     Cancelar
                 </ButtonPrimary>
 
-                <ButtonPrimary @click="$emit('confirm')" class="">
+                <ButtonPrimary @click="$emit('confirm')" class="!w-max">
                     Eliminar
                 </ButtonPrimary>
             </div>

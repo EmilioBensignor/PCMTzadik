@@ -8,7 +8,8 @@ export default defineNuxtConfig({
     '@nuxt/icon',
     '@nuxt/image',
     '@nuxtjs/tailwindcss',
-    '@nuxtjs/supabase'
+    '@nuxtjs/supabase',
+    '@pinia/nuxt'
   ],
   app: {
     head: {
@@ -36,17 +37,19 @@ export default defineNuxtConfig({
         '/reset-password',
       ]
     },
+    cookieOptions: {
+      maxAge: 60 * 60 * 8,
+      secure: process.env.NODE_ENV === 'production'
+    },
+    clientOptions: {
+      auth: {
+        persistSession: true,
+        detectSessionInUrl: true,
+        autoRefreshToken: true,
+        storage: undefined
+      }
+    },
   },
-  // cookieOptions: {
-  //   maxAge: 60 * 60 * 8,
-  //   secure: process.env.NODE_ENV === 'production'
-  // },
-  // clientOptions: {
-  //   auth: {
-  //     persistSession: true,
-  //     detectSessionInUrl: true,
-  //   }
-  // },
   fonts: {
     defaults: {
       weights: [300, 400, 500, 700, 900],

@@ -1,0 +1,408 @@
+<template>
+    <div class="w-full flex items-center flex-col gap-6">
+        <FormSelect v-model="selectedCategory" :options="categoryOptions" placeholder="Selecciona una categoría..."
+            class="max-w-md" :disabled="isEditing" @update:modelValue="onCategoryChange" />
+
+        <div v-if="selectedCategory && subcategoryOptions.length > 0"
+            class="w-full max-w-md lg:max-w-[50rem] flex flex-col gap-3">
+            <FormLabel class="text-xl font-light text-dark">Subcategorías</FormLabel>
+            <div class="w-full grid lg:grid-cols-4 gap-2 lg:gap-4">
+                <FormCheckboxField v-for="option in subcategoryOptions" :key="option.value"
+                    :id="`subcategory-${option.value}`" :model-value="selectedSubcategories.includes(option.value)"
+                    :label="option.label" @update:model-value="toggleSubcategory(option.value)" />
+            </div>
+        </div>
+
+        <FormLayout v-if="selectedCategory" @submit.prevent="handleSubmit">
+            <FormFieldsContainer>
+                <FormTextField id="titulo" v-model="formData.titulo" label="Título" required :error="errors.titulo"
+                    placeholder="Ingresa el título del producto" />
+
+                <FormSelect id="condicion" v-model="formData.condicion" label="Condición" required
+                    :error="errors.condicion" :options="condicionOptions" placeholder="Seleccionar condición" />
+            </FormFieldsContainer>
+
+            <FormFieldsContainer>
+                <FormTextField id="precio" v-model="formData.precio" label="Precio" required :error="errors.precio"
+                    type="number" step="0.01" placeholder="Ingresa el precio" />
+
+                <FormTextField id="oferta" v-model="formData.oferta" label="Oferta" :error="errors.oferta"
+                    placeholder="Ingresa el texto de oferta" />
+            </FormFieldsContainer>
+
+            <FormFieldsContainer>
+                <FormSwitch id="destacado" v-model="formData.destacado" label="Producto Destacado" />
+            </FormFieldsContainer>
+
+            <FormFieldsContainer>
+                <FormTextarea id="descripcion_corta" v-model="formData.descripcion_corta" label="Descripción Corta"
+                    :error="errors.descripcion_corta" placeholder="Descripción breve del producto" :rows="2" />
+            </FormFieldsContainer>
+
+            <FormFieldsContainer>
+                <FormTextarea id="descripcion_larga" v-model="formData.descripcion_larga" label="Descripción Larga"
+                    :error="errors.descripcion_larga" placeholder="Descripción detallada del producto" :rows="4" />
+            </FormFieldsContainer>
+
+            <div class="w-full flex flex-col gap-4">
+                <FormLabel class="text-lg font-medium" required>Imágenes del Producto</FormLabel>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <FormImageField v-for="(image, index) in productImages" :key="`image-${index}`"
+                        :id="`imagen-${index}`" v-model="productImages[index].url"
+                        :label="`Imagen ${index + 1} ${productImages[index].es_principal ? '(Principal)' : ''}`"
+                        @upload-complete="onImageUpload(index, $event)" />
+                </div>
+
+                <div class="flex gap-6">
+                    <ButtonPrimary @click="addImageSlot" type="button" class="!w-auto !px-4">
+                        Agregar otra imagen
+                    </ButtonPrimary>
+                    <ButtonTerciary v-if="productImages.length > 1" @click="removeLastImage" type="button"
+                        class="!w-auto !bg-error !px-4">
+                        Quitar última imagen
+                    </ButtonTerciary>
+                </div>
+            </div>
+
+            <div class="w-full flex flex-col gap-4">
+                <FormLabel class="text-lg font-medium">Video del Producto (Solo la URL, src="...")</FormLabel>
+
+                <FormFieldsContainer>
+                    <FormTextField id="video-titulo" v-model="productVideo.titulo" label="Título del Video"
+                        placeholder="Título del video" />
+                    <FormTextField id="video-url" v-model="productVideo.url" label="URL del Video"
+                        placeholder="https://www.youtube.com/embed/VIDEO_ID" />
+                </FormFieldsContainer>
+
+                <div v-if="productVideo.url" class="w-full max-w-md">
+                    <div v-if="isValidYouTubeUrl(productVideo.url)">
+                        <iframe :src="sanitizeYouTubeUrl(productVideo.url)" class="w-full h-48 rounded border"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div v-else
+                        class="w-full h-48 rounded border bg-gray-100 flex items-center justify-center text-gray-500">
+                        URL de video no válida. Use formato: https://www.youtube.com/embed/VIDEO_ID
+                    </div>
+                </div>
+            </div>
+
+            <template v-for="(chunk, chunkIndex) in columnChunks" :key="`chunk-${chunkIndex}`">
+                <FormFieldsContainer>
+                    <template v-for="field in chunk" :key="field.id">
+                        <FormTextField v-if="field.type === 'text'" :id="`field-${field.id}`"
+                            v-model="formData[field.id]" :label="field.label" :required="field.required"
+                            :error="errors[field.id]" :placeholder="`Ingresa ${field.label.toLowerCase()}`" />
+
+                        <FormTextarea v-else-if="field.type === 'textarea'" :id="`field-${field.id}`"
+                            v-model="formData[field.id]" :label="field.label" :required="field.required"
+                            :error="errors[field.id]" :placeholder="`Ingresa ${field.label.toLowerCase()}`" :rows="4" />
+
+                        <FormTextField v-else-if="field.type === 'number'" :id="`field-${field.id}`"
+                            v-model="formData[field.id]" :label="field.label" :required="field.required"
+                            :error="errors[field.id]" type="number"
+                            :placeholder="`Ingresa ${field.label.toLowerCase()}`" />
+
+                        <FormTextField v-else-if="field.type === 'currency'" :id="`field-${field.id}`"
+                            v-model="formData[field.id]" :label="field.label" :required="field.required"
+                            :error="errors[field.id]" type="number" step="0.01"
+                            :placeholder="`Ingresa ${field.label.toLowerCase()}`" />
+
+                        <FormSelect v-else-if="field.type === 'select'" :id="`field-${field.id}`"
+                            v-model="formData[field.id]" :label="field.label" :required="field.required"
+                            :error="errors[field.id]" :options="field.options || []"
+                            :placeholder="`Seleccionar ${field.label.toLowerCase()}`" />
+                    </template>
+                </FormFieldsContainer>
+            </template>
+
+            <div class="w-full flex flex-col lg:flex-row items-center gap-5 mt-8">
+                <ButtonPrimary @click="$emit('cancel')" type="button" class="!bg-gray-mid !text-dark">
+                    Cancelar
+                </ButtonPrimary>
+
+                <ButtonPrimary type="submit" :disabled="isSubmitting" class="">
+                    {{ isSubmitting ? (isEditing ? 'Actualizando...' : 'Creando...') : (isEditing ? 'Actualizar' :
+                        'Crear') }}
+                </ButtonPrimary>
+            </div>
+        </FormLayout>
+    </div>
+</template>
+
+<script setup>
+const props = defineProps({
+    isEditing: {
+        type: Boolean,
+        default: false
+    },
+    productData: {
+        type: Object,
+        default: () => ({})
+    }
+})
+
+const emit = defineEmits(['submit', 'cancel'])
+
+const { categorias, fetchCategorias, fetchSubcategorias, fetchCategoriaCampos, getCamposPorCategoria, getSubcategoriasPorCategoria, generateFormFields, validateDynamicData } = useCategorias()
+const { getImagenesByProducto } = useProductos()
+const { getImageUrl } = useStorage()
+
+const selectedCategory = ref('')
+const selectedCategoryId = ref(null)
+const selectedSubcategories = ref([])
+const formData = ref({})
+const errors = ref({})
+const isSubmitting = ref(false)
+const formFields = ref([])
+const productImages = ref([{ url: '', es_principal: true, alt_text: '', orden: 1 }])
+const productVideo = ref({ titulo: '', url: '' })
+
+onMounted(async () => {
+    await fetchCategorias()
+    if (props.isEditing && props.productData.id) {
+        await initializeForEdit()
+    }
+})
+
+const categoryOptions = computed(() => {
+    return categorias.value.map(cat => ({
+        value: cat.id,
+        label: cat.nombre
+    }))
+})
+
+const currentCategory = computed(() => {
+    return categorias.value.find(cat => cat.id === selectedCategoryId.value)
+})
+
+const subcategoryOptions = computed(() => {
+    if (!selectedCategoryId.value) return []
+    return getSubcategoriasPorCategoria(selectedCategoryId.value).map(sub => ({
+        value: sub.id,
+        label: sub.nombre
+    }))
+})
+
+const columnChunks = computed(() => {
+    if (!formFields.value.length) return []
+
+    const chunks = []
+    let currentChunk = []
+
+    formFields.value.forEach(field => {
+        if (field.type === 'textarea') {
+            if (currentChunk.length > 0) {
+                chunks.push([...currentChunk])
+                currentChunk = []
+            }
+            chunks.push([field])
+        } else {
+            currentChunk.push(field)
+            if (currentChunk.length === 2) {
+                chunks.push([...currentChunk])
+                currentChunk = []
+            }
+        }
+    })
+
+    if (currentChunk.length > 0) {
+        chunks.push(currentChunk)
+    }
+
+    return chunks
+})
+
+const condicionOptions = [
+    { value: 'Nuevo', label: 'Nuevo' },
+    { value: 'Usado', label: 'Usado' },
+    { value: 'Seminuevo', label: 'Seminuevo' }
+]
+
+const isValidYouTubeUrl = (url) => {
+    if (!url) return false
+    const youtubeEmbedRegex = /^https:\/\/www\.youtube\.com\/embed\/[a-zA-Z0-9_-]+(\?.*)?$/
+    const youtubeWatchRegex = /^https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)(&.*)?$/
+    const youtubeShortRegex = /^https:\/\/youtu\.be\/([a-zA-Z0-9_-]+)(\?.*)?$/
+
+    return youtubeEmbedRegex.test(url) || youtubeWatchRegex.test(url) || youtubeShortRegex.test(url)
+}
+
+const sanitizeYouTubeUrl = (url) => {
+    if (!url) return ''
+
+    if (url.includes('/embed/')) {
+        return url
+    }
+
+    const watchMatch = url.match(/[?&]v=([a-zA-Z0-9_-]+)/)
+    if (watchMatch) {
+        return `https://www.youtube.com/embed/${watchMatch[1]}`
+    }
+
+    const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/)
+    if (shortMatch) {
+        return `https://www.youtube.com/embed/${shortMatch[1]}`
+    }
+
+    return url
+}
+
+const onCategoryChange = async (categoryId) => {
+    if (categoryId) {
+        selectedCategoryId.value = categoryId
+        selectedSubcategories.value = []
+
+        await fetchSubcategorias(categoryId)
+        await fetchCategoriaCampos(categoryId)
+
+        formFields.value = generateFormFields(categoryId)
+
+        formData.value = {}
+        errors.value = {}
+
+        formData.value = {
+            titulo: '',
+            condicion: '',
+            precio: '',
+            oferta: '',
+            destacado: false,
+            descripcion_larga: '',
+            descripcion_corta: ''
+        }
+    }
+}
+
+const toggleSubcategory = (subcategoryValue) => {
+    const index = selectedSubcategories.value.indexOf(subcategoryValue)
+    if (index > -1) {
+        selectedSubcategories.value.splice(index, 1)
+    } else {
+        selectedSubcategories.value.push(subcategoryValue)
+    }
+}
+
+const addImageSlot = () => {
+    productImages.value.push({
+        url: '',
+        es_principal: false,
+        alt_text: '',
+        orden: productImages.value.length + 1
+    })
+}
+
+const removeLastImage = () => {
+    if (productImages.value.length > 1) {
+        productImages.value.pop()
+    }
+}
+
+const onImageUpload = (index, url) => {
+    productImages.value[index].url = url
+}
+
+const initializeForEdit = async () => {
+    const product = props.productData
+    if (product) {
+        selectedCategoryId.value = product.categoria_id
+        selectedCategory.value = product.categoria_id
+
+        if (product.subcategoria_id) {
+            selectedSubcategories.value = Array.isArray(product.subcategoria_id)
+                ? product.subcategoria_id
+                : [product.subcategoria_id]
+        }
+
+        await fetchCategoriaCampos(product.categoria_id)
+        formFields.value = generateFormFields(product.categoria_id)
+
+        formData.value = {
+            titulo: product.titulo || '',
+            condicion: product.condicion || '',
+            precio: product.precio || '',
+            oferta: product.oferta || '',
+            destacado: product.destacado || false,
+            descripcion_larga: product.descripcion_larga || '',
+            descripcion_corta: product.descripcion_corta || '',
+            ...product.datos_dinamicos
+        }
+
+        const imagenes = getImagenesByProducto(product.id)
+        if (imagenes.length > 0) {
+            productImages.value = imagenes.map(img => ({
+                url: getImageUrl(img.storage_path) || '',
+                es_principal: img.es_principal,
+                alt_text: img.alt_text || '',
+                orden: img.orden
+            }))
+        }
+
+        if (product.videos && Array.isArray(product.videos) && product.videos.length > 0) {
+            productVideo.value = {
+                titulo: product.videos[0].titulo || '',
+                url: product.videos[0].url || ''
+            }
+        }
+    }
+}
+
+const handleSubmit = async () => {
+    const validation = validateDynamicData(selectedCategoryId.value, formData.value)
+    if (!validation.isValid) {
+        errors.value = validation.errors
+        return
+    }
+
+    const imagenesFiltradas = productImages.value.filter(img => img.url && img.url.trim() !== '')
+    if (imagenesFiltradas.length === 0) {
+        errors.value = { general: 'Debe agregar al menos una imagen al producto' }
+        return
+    }
+
+    isSubmitting.value = true
+
+    try {
+        const { titulo, condicion, precio, oferta, destacado, descripcion_larga, descripcion_corta, ...datosDinamicos } = formData.value
+
+        const productoData = {
+            categoria_id: selectedCategoryId.value,
+            subcategoria_id: selectedSubcategories.value.length > 0 ? selectedSubcategories.value[0] : null,
+            titulo,
+            condicion,
+            precio: parseFloat(precio) || 0,
+            oferta: oferta || null,
+            destacado: destacado || false,
+            descripcion_larga,
+            descripcion_corta,
+            datos_dinamicos: datosDinamicos
+        }
+
+        const videoData = productVideo.value.url && productVideo.value.url.trim() !== ''
+            ? [{ titulo: productVideo.value.titulo || '', url: productVideo.value.url, orden: 1 }]
+            : []
+
+        productoData.videos = videoData
+
+        emit('submit', {
+            productoData,
+            imagenes: imagenesFiltradas,
+            isEditing: props.isEditing,
+            productId: props.productData?.id
+        })
+
+    } catch (err) {
+        console.error('Error en formulario:', err)
+        errors.value = { general: 'Error al procesar el formulario' }
+    } finally {
+        isSubmitting.value = false
+    }
+}
+
+watch(() => props.productData, async (newData) => {
+    if (newData && Object.keys(newData).length > 0) {
+        await initializeForEdit()
+    }
+}, { deep: true })
+</script>
