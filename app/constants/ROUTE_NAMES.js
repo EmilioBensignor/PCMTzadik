@@ -11,7 +11,7 @@ export const ROUTE_NAMES = {
     // Productos
     PRODUCTOS: '/productos',
     PRODUCTOS_CREAR: '/productos/crear',
-    PRODUCTOS_EDITAR: (id) => `/productos/crear?edit=${id}`,
+    PRODUCTOS_EDITAR: (id) => `/productos/edit/${id}`,
     PRODUCTOS_CATEGORIA: (nombre) => `/productos/${encodeURIComponent(nombre)}`,
     // Reviews
     REVIEWS: '/reviews',

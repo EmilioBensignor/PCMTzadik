@@ -153,7 +153,7 @@ const getMainImage = (producto) => {
 
 
 const editProduct = (producto) => {
-    navigateTo(`/productos/edit/${producto.id}`)
+    navigateTo(ROUTE_NAMES.PRODUCTOS_EDITAR(producto.id))
 }
 
 const openDeleteModal = (producto) => {
