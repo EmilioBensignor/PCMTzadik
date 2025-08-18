@@ -1,7 +1,7 @@
 export const useStorage = () => {
   const supabase = useSupabaseClient()
   const config = useRuntimeConfig()
-  
+
   const uploading = ref(false)
   const uploadProgress = ref(0)
   const error = ref(null)
@@ -11,50 +11,50 @@ export const useStorage = () => {
     const random = Math.random().toString(36).substring(2, 8)
     const extension = originalName.split('.').pop()
     const baseName = originalName.split('.').slice(0, -1).join('.')
-    
+
     return `${prefix}${timestamp}-${random}-${baseName}.${extension}`
   }
 
   const generateSeoFriendlyFileName = (originalName, productSlug, index = 1, isPrincipal = false) => {
     const extension = originalName.split('.').pop().toLowerCase()
     const suffix = isPrincipal ? 'principal' : index.toString().padStart(2, '0')
-    
+
     // Limpiar el slug para nombres de archivo (solo letras, números y guiones)
     const cleanSlug = productSlug.toLowerCase()
       .replace(/[^a-z0-9-]/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '')
-    
+
     return `${cleanSlug}-${suffix}.${extension}`
   }
 
   const validateImageFile = (file) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
     const maxSize = 10 * 1024 * 1024
-    
+
     if (!allowedTypes.includes(file.type)) {
       throw new Error('Tipo de archivo no permitido. Solo se permiten: JPEG, PNG, WebP, GIF')
     }
-    
+
     if (file.size > maxSize) {
       throw new Error('El archivo es demasiado grande. Máximo 10MB')
     }
-    
+
     return true
   }
 
   const validateVideoFile = (file) => {
     const allowedTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/avi', 'video/mov']
     const maxSize = 100 * 1024 * 1024
-    
+
     if (!allowedTypes.includes(file.type)) {
       throw new Error('Tipo de archivo no permitido. Solo se permiten: MP4, WebM, OGG, AVI, MOV')
     }
-    
+
     if (file.size > maxSize) {
       throw new Error('El archivo es demasiado grande. Máximo 100MB')
     }
-    
+
     return true
   }
 
@@ -63,24 +63,24 @@ export const useStorage = () => {
       uploading.value = true
       uploadProgress.value = 0
       error.value = null
-      
+
       validateImageFile(file)
-      
+
       const fileName = generateUniqueFileName(file.name, `producto-${productoId}-`)
       const filePath = `${productoId}/${fileName}`
-      
+
       const { data, error: uploadError } = await supabase.storage
         .from('productos-imagenes')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
         })
-      
+
       if (uploadError) throw uploadError
-      
+
       uploadProgress.value = 100
       return data.path
-      
+
     } catch (err) {
       error.value = err.message
       console.error('Error uploading imagen:', err)
@@ -95,24 +95,24 @@ export const useStorage = () => {
       uploading.value = true
       uploadProgress.value = 0
       error.value = null
-      
+
       validateImageFile(file)
-      
+
       const fileName = generateSeoFriendlyFileName(file.name, productSlug, index, isPrincipal)
       const filePath = `${productSlug}/${fileName}`
-      
+
       const { data, error: uploadError } = await supabase.storage
         .from('productos-imagenes')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: true // Permitir sobreescribir si ya existe
         })
-      
+
       if (uploadError) throw uploadError
-      
+
       uploadProgress.value = 100
       return data.path
-      
+
     } catch (err) {
       error.value = err.message
       console.error('Error uploading imagen SEO-friendly:', err)
@@ -126,17 +126,17 @@ export const useStorage = () => {
     try {
       uploading.value = true
       error.value = null
-      
+
       const uploadPromises = files.map(async (file, index) => {
         uploadProgress.value = Math.round((index / files.length) * 100)
         return await uploadProductoImagen(file, productoId)
       })
-      
+
       const paths = await Promise.all(uploadPromises)
       uploadProgress.value = 100
-      
+
       return paths
-      
+
     } catch (err) {
       error.value = err.message
       console.error('Error uploading imagenes:', err)
@@ -150,18 +150,18 @@ export const useStorage = () => {
     try {
       uploading.value = true
       error.value = null
-      
+
       const uploadPromises = files.map(async (file, index) => {
         uploadProgress.value = Math.round((index / files.length) * 100)
         const isPrincipal = index === 0 // Primera imagen es principal
         return await uploadProductoImagenSeoFriendly(file, productSlug, index + 1, isPrincipal)
       })
-      
+
       const paths = await Promise.all(uploadPromises)
       uploadProgress.value = 100
-      
+
       return paths
-      
+
     } catch (err) {
       error.value = err.message
       console.error('Error uploading imagenes SEO-friendly:', err)
@@ -176,24 +176,24 @@ export const useStorage = () => {
       uploading.value = true
       uploadProgress.value = 0
       error.value = null
-      
+
       validateVideoFile(file)
-      
+
       const fileName = generateUniqueFileName(file.name, `video-${productoId}-`)
       const filePath = `${productoId}/${fileName}`
-      
+
       const { data, error: uploadError } = await supabase.storage
         .from('productos-videos')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
         })
-      
+
       if (uploadError) throw uploadError
-      
+
       uploadProgress.value = 100
       return data.path
-      
+
     } catch (err) {
       error.value = err.message
       console.error('Error uploading video:', err)
@@ -207,17 +207,17 @@ export const useStorage = () => {
     try {
       uploading.value = true
       error.value = null
-      
+
       const uploadPromises = files.map(async (file, index) => {
         uploadProgress.value = Math.round((index / files.length) * 100)
         return await uploadProductoVideo(file, productoId)
       })
-      
+
       const paths = await Promise.all(uploadPromises)
       uploadProgress.value = 100
-      
+
       return paths
-      
+
     } catch (err) {
       error.value = err.message
       console.error('Error uploading videos:', err)
@@ -230,13 +230,13 @@ export const useStorage = () => {
   const deleteProductoImagen = async (storagePath) => {
     try {
       error.value = null
-      
+
       const { error: deleteError } = await supabase.storage
         .from('productos-imagenes')
         .remove([storagePath])
-      
+
       if (deleteError) throw deleteError
-      
+
     } catch (err) {
       error.value = err.message
       console.error('Error deleting imagen:', err)
@@ -247,13 +247,13 @@ export const useStorage = () => {
   const deleteProductoVideo = async (storagePath) => {
     try {
       error.value = null
-      
+
       const { error: deleteError } = await supabase.storage
         .from('productos-videos')
         .remove([storagePath])
-      
+
       if (deleteError) throw deleteError
-      
+
     } catch (err) {
       error.value = err.message
       console.error('Error deleting video:', err)
@@ -273,17 +273,17 @@ export const useStorage = () => {
 
   const getImageUrlWithTransform = (storagePath, options = {}) => {
     if (!storagePath) return null
-    
+
     const baseUrl = `${config.public.supabase.url}/storage/v1/object/public/productos-imagenes/${storagePath}`
-    
+
     const params = new URLSearchParams()
-    
+
     if (options.width) params.append('width', options.width)
     if (options.height) params.append('height', options.height)
     if (options.quality) params.append('quality', options.quality)
     if (options.format) params.append('format', options.format)
     if (options.resize) params.append('resize', options.resize)
-    
+
     const queryString = params.toString()
     return queryString ? `${baseUrl}?${queryString}` : baseUrl
   }
@@ -293,10 +293,10 @@ export const useStorage = () => {
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')
       const img = new Image()
-      
+
       img.onload = () => {
         let { width, height } = img
-        
+
         if (width > height) {
           if (width > maxWidth) {
             height = height * (maxWidth / width)
@@ -308,15 +308,15 @@ export const useStorage = () => {
             height = maxHeight
           }
         }
-        
+
         canvas.width = width
         canvas.height = height
-        
+
         ctx.drawImage(img, 0, 0, width, height)
-        
+
         canvas.toBlob(resolve, 'image/jpeg', quality)
       }
-      
+
       img.src = URL.createObjectURL(file)
     })
   }
@@ -326,21 +326,21 @@ export const useStorage = () => {
       const video = document.createElement('video')
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')
-      
+
       video.addEventListener('loadedmetadata', () => {
         canvas.width = video.videoWidth
         canvas.height = video.videoHeight
         video.currentTime = timeInSeconds
       })
-      
+
       video.addEventListener('seeked', () => {
         ctx.drawImage(video, 0, 0)
         canvas.toBlob(resolve, 'image/jpeg', 0.8)
         URL.revokeObjectURL(video.src)
       })
-      
+
       video.addEventListener('error', reject)
-      
+
       video.src = URL.createObjectURL(file)
     })
   }
@@ -352,18 +352,18 @@ export const useStorage = () => {
       type: file.type,
       lastModified: file.lastModified
     }
-    
+
     if (file.type.startsWith('image/')) {
       const dimensions = await getImageDimensions(file)
       metadata.width = dimensions.width
       metadata.height = dimensions.height
     }
-    
+
     if (file.type.startsWith('video/')) {
       const videoDuration = await getVideoDuration(file)
       metadata.duration = videoDuration
     }
-    
+
     return metadata
   }
 
@@ -392,25 +392,80 @@ export const useStorage = () => {
     })
   }
 
+  const uploadReviewImage = async (file, fileName) => {
+    try {
+      uploading.value = true
+      uploadProgress.value = 0
+      error.value = null
+
+      validateImageFile(file)
+
+      const { data, error: uploadError } = await supabase.storage
+        .from('reviews-imagenes')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (uploadError) throw uploadError
+
+      uploadProgress.value = 100
+      return data.path
+
+    } catch (err) {
+      error.value = err.message
+      console.error('Error uploading review image:', err)
+      throw err
+    } finally {
+      uploading.value = false
+    }
+  }
+
+  const deleteReviewImage = async (storagePath) => {
+    try {
+      error.value = null
+
+      const { error: deleteError } = await supabase.storage
+        .from('reviews-imagenes')
+        .remove([storagePath])
+
+      if (deleteError) throw deleteError
+
+    } catch (err) {
+      error.value = err.message
+      console.error('Error deleting review image:', err)
+      throw err
+    }
+  }
+
+  const getReviewImageUrl = (storagePath) => {
+    if (!storagePath) return null
+    return `${config.public.supabase.url}/storage/v1/object/public/reviews-imagenes/${storagePath}`
+  }
+
   return {
     uploading: readonly(uploading),
     uploadProgress: readonly(uploadProgress),
     error: readonly(error),
-    
+
     uploadProductoImagen,
     uploadProductoImagenes,
     uploadProductoImagenSeoFriendly,
     uploadProductoImagenesSeoFriendly,
     uploadProductoVideo,
     uploadProductoVideos,
-    
+
     deleteProductoImagen,
     deleteProductoVideo,
-    
+
+    uploadReviewImage,
+    deleteReviewImage,
+    getReviewImageUrl,
+
     getImageUrl,
     getVideoUrl,
     getImageUrlWithTransform,
-    
+
     validateImageFile,
     validateVideoFile,
     generateUniqueFileName,

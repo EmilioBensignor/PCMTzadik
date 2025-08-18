@@ -147,7 +147,8 @@ const handleImageError = (event) => {
 const getMainImage = (producto) => {
     const imagenes = getImagenesByProducto(producto.id)
     const mainImage = imagenes.find(img => img.es_principal) || imagenes[0]
-    return mainImage ? getImageUrl(mainImage.storage_path) : null
+    const imageUrl = mainImage ? getImageUrl(mainImage.storage_path) : null
+    return imageUrl
 }
 
 

@@ -6,7 +6,7 @@
             <div @click="triggerFileInput" @dragover.prevent @dragenter.prevent @drop.prevent="handleDrop"
                 class="bg-light border-2 border-dashed rounded-[5px] text-center cursor-pointer transition-colors p-6">
                 <div v-if="!imagePreview" class="space-y-2">
-                    <Icon name="tabler:cloud-upload" class="mx-auto text-4xl text-dark" />
+                    <Icon name="tabler:cloud-upload" class="w-6 h-6 text-dark mx-auto" />
                     <p class="text-dark">
                         Haz clic aquí o arrastra una imagen
                     </p>

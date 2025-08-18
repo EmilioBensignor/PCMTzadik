@@ -14,6 +14,7 @@ export default {
                 secondary: "#FF541C",
                 secondaryHover: "#FF541C",
                 terciary: "#B82D18",
+                accent: "#FCC008",
                 light: '#FBF9F9',
                 dark: "#03101D",
                 gray: {

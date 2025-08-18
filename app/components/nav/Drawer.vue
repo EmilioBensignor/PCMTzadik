@@ -60,6 +60,11 @@ const menu = [
         route: ROUTE_NAMES.PRODUCTOS,
         title: "Productos",
         icon: "package",
+    },
+    {
+        route: ROUTE_NAMES.REVIEWS,
+        title: "Reviews",
+        icon: "message-circle",
     }
 ]
 
