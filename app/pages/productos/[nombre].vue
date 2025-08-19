@@ -1,6 +1,6 @@
 <template>
     <DefaultSection>
-        <NuxtLink :to="ROUTE_NAMES.PRODUCTOS"
+        <NuxtLink :to="ROUTE_NAMES.HOME"
             class="flex items-center gap-2 self-start text-dark font-light no-underline">
             <Icon name="tabler:arrow-left" size="1.25rem" />
             Volver a productos

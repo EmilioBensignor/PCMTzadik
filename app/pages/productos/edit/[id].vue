@@ -1,6 +1,6 @@
 <template>
     <DefaultSection>
-        <NuxtLink :to="ROUTE_NAMES.PRODUCTOS"
+        <NuxtLink :to="ROUTE_NAMES.HOME"
             class="flex items-center gap-2 self-start text-dark font-light no-underline">
             <Icon name="tabler:arrow-left" size="1.25rem" />
             Volver a productos
@@ -13,7 +13,7 @@
 
         <div v-else-if="error" class="text-center py-12">
             <p class="text-red-600">{{ error }}</p>
-            <NuxtLink :to="ROUTE_NAMES.PRODUCTOS" class="text-primary hover:underline mt-4 inline-block">
+            <NuxtLink :to="ROUTE_NAMES.HOME" class="text-primary hover:underline mt-4 inline-block">
                 Volver a productos
             </NuxtLink>
         </div>
@@ -92,7 +92,7 @@ const handleSubmit = async (formData) => {
         if (producto.value?.categorias?.nombre) {
             navigateTo(ROUTE_NAMES.PRODUCTOS_CATEGORIA(producto.value.categorias.nombre))
         } else {
-            navigateTo(ROUTE_NAMES.PRODUCTOS)
+            navigateTo(ROUTE_NAMES.HOME)
         }
     } catch (err) {
         console.error('Error updating product:', err)
@@ -106,7 +106,7 @@ const handleCancel = () => {
     if (producto.value?.categorias?.nombre) {
         navigateTo(ROUTE_NAMES.PRODUCTOS_CATEGORIA(producto.value.categorias.nombre))
     } else {
-        navigateTo(ROUTE_NAMES.PRODUCTOS)
+        navigateTo(ROUTE_NAMES.HOME)
     }
 }
 </script>
