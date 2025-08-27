@@ -91,7 +91,7 @@
 import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES.js'
 
 const { categorias, loading, fetchCategorias, fetchSubcategorias, getSubcategoriasPorCategoria } = useCategorias()
-const { getProductosByCategoria, fetchProductos, productos, clearFilters } = useProductos()
+const { getProductosByCategoria, fetchProductos, productos, clearFilters, setFilter } = useProductos()
 
 const showSubcategoryModal = ref(false)
 const editingCategory = ref(null)
@@ -103,11 +103,9 @@ onMounted(async () => {
     try {
         await fetchCategorias()
         await fetchSubcategorias()
+        await fetchProductCounts()
         
         clearFilters()
-        await fetchProductos({ 
-            includeImages: false
-        })
     } catch (error) {
         console.error('Error loading data:', error)
     } finally {
@@ -115,15 +113,50 @@ onMounted(async () => {
     }
 })
 
+const productCounts = ref({})
+
 const getProductCount = (categoriaId) => {
-    return getProductosByCategoria(categoriaId).length
+    return productCounts.value[categoriaId] || 0
+}
+
+const fetchProductCounts = async () => {
+    try {
+        const supabase = useSupabaseClient()
+        const counts = {}
+        
+        // Fetch count for each category in parallel
+        const countPromises = categorias.value.map(async (categoria) => {
+            const { count, error } = await supabase
+                .from('productos')
+                .select('*', { count: 'exact', head: true })
+                .eq('categoria_id', categoria.id)
+            
+            if (error) throw error
+            counts[categoria.id] = count || 0
+        })
+        
+        await Promise.all(countPromises)
+        productCounts.value = counts
+    } catch (error) {
+        console.error('Error fetching product counts:', error)
+    }
 }
 
 const getSubcategoriasByCategoria = (categoriaId) => {
     return getSubcategoriasPorCategoria(categoriaId)
 }
 
-const navigateToCategory = (categoryName) => {
+const navigateToCategory = async (categoryName) => {
+    // Find the category to get its ID
+    const categoria = categorias.value.find(cat => cat.nombre === categoryName)
+    if (categoria) {
+        // Apply the category filter before navigation
+        setFilter('categoria_id', categoria.id)
+        
+        // Preload products for this category
+        await fetchProductos({ includeImages: false })
+    }
+    
     navigateTo(ROUTE_NAMES.PRODUCTOS_CATEGORIA(categoryName))
 }
 

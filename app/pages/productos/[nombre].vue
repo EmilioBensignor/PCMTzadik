@@ -18,8 +18,13 @@
         <div v-if="productos.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <div v-for="producto in productos" :key="producto.id" class="bg-white rounded-lg shadow-1">
                 <div class="aspect-video rounded-t-lg overflow-hidden">
-                    <NuxtImg :src="getMainImage(producto)" :alt="producto.titulo" class="w-full h-full object-cover"
-                        @error="handleImageError" />
+                    <NuxtImg 
+                        :src="getMainImage(producto)" 
+                        :alt="producto.titulo" 
+                        class="w-full h-full object-cover"
+                        loading="lazy"
+                        @error="handleImageError" 
+                    />
                 </div>
 
                 <div class="flex flex-col gap-3 p-4">
@@ -103,6 +108,25 @@ const currentCategory = computed(() => {
 
 const categoryProducts = computed(() => productos.value)
 
+const visiblePages = computed(() => {
+    const maxVisible = 5
+    const current = currentPage.value
+    const total = totalPages.value
+    
+    if (total <= maxVisible) {
+        return Array.from({ length: total }, (_, i) => i + 1)
+    }
+    
+    let start = Math.max(1, current - Math.floor(maxVisible / 2))
+    let end = Math.min(total, start + maxVisible - 1)
+    
+    if (end - start + 1 < maxVisible) {
+        start = Math.max(1, end - maxVisible + 1)
+    }
+    
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i)
+})
+
 
 onMounted(async () => {
     await fetchCategorias()
@@ -141,14 +165,19 @@ const formatCurrency = (amount) => {
 }
 
 const handleImageError = (event) => {
-    event.target.style.display = 'none'
+    event.target.src = '/images/Placeholder.png'
 }
 
 const getMainImage = (producto) => {
     const imagenes = getImagenesByProducto(producto.id)
     const mainImage = imagenes.find(img => img.es_principal) || imagenes[0]
-    const imageUrl = mainImage ? getImageUrl(mainImage.storage_path) : null
-    return imageUrl
+    
+    if (mainImage && mainImage.storage_path) {
+        return getImageUrl(mainImage.storage_path)
+    }
+    
+    // Fallback to placeholder
+    return '/images/Placeholder.png'
 }
 
 
