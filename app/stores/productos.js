@@ -343,10 +343,18 @@ export const useProductosStore = defineStore('productos', () => {
   }
 
   // Funciones helper para URLs de Storage
-  const getImageUrl = (storagePath) => {
+  const getImageUrl = (storagePath, cacheBust = false) => {
     if (!storagePath) return null
     const config = useRuntimeConfig()
-    return `${config.public.supabase.url}/storage/v1/object/public/productos-imagenes/${storagePath}`
+    let url = `${config.public.supabase.url}/storage/v1/object/public/productos-imagenes/${storagePath}`
+    
+    // Agregar cache busting solo cuando se especifique
+    if (cacheBust) {
+      const timestamp = Date.now()
+      url += `?v=${timestamp}`
+    }
+    
+    return url
   }
   
   // Función helper para manejar múltiples subcategorías

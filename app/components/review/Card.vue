@@ -1,6 +1,6 @@
 <template>
     <div class="flex flex-col gap-3 rounded-xl orange-shadow p-3">
-        <NuxtImg :src="review.img" :alt="`Opinion de ${review.autor}`" class="w-full h-32 md:h-40 object-cover rounded-xl" />
+        <NuxtImg :src="imageUrl" :alt="`Opinion de ${review.autor}`" class="w-full h-32 md:h-40 object-cover rounded-xl" />
         <div class="h-full flex flex-col justify-between gap-2.5">
             <p class="lg:text-xl font-semibold">{{ review.titulo }}</p>
             <p class="text-xs lg:text-sm">{{ review.comentario }}</p>
@@ -26,7 +26,7 @@
 <script setup>
 import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES.js'
 
-defineProps({
+const props = defineProps({
     review: {
         type: Object,
         required: true
@@ -34,4 +34,21 @@ defineProps({
 })
 
 defineEmits(['delete'])
+
+// Generate a stable cache bust value based on review ID and update time
+const cacheBustValue = computed(() => {
+    // Use review ID and a timestamp to create a stable cache bust value
+    const reviewId = props.review.id || 'no-id'
+    const updated = props.review.updated_at || props.review.created_at || Date.now()
+    return `${reviewId}-${new Date(updated).getTime()}`
+})
+
+const imageUrl = computed(() => {
+    if (!props.review.img) return null
+    
+    // Agregar cache busting basado en el review
+    const baseUrl = props.review.img.split('?')[0] // Remover query params existentes
+    
+    return `${baseUrl}?v=${cacheBustValue.value}`
+})
 </script>

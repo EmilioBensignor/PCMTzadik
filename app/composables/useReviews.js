@@ -65,11 +65,13 @@ export const useReviews = () => {
   }
 
   const uploadReviewImage = async (imagen, reviewData) => {
-    const { uploadReviewImage: uploadToStorage } = useStorage()
+    const { uploadReviewImage: uploadToStorage, getReviewImageUrl } = useStorage()
 
     try {
       let file
-      let filename = `review-${generateSlug(reviewData.autor)}-${generateSlug(reviewData.titulo)}.jpg`
+      const timestamp = Date.now()
+      const randomId = Math.random().toString(36).substring(2, 8)
+      let filename = `review-${generateSlug(reviewData.autor)}-${generateSlug(reviewData.titulo)}-${timestamp}-${randomId}.jpg`
 
       if (imagen.url && imagen.url.startsWith('data:')) {
         const response = await fetch(imagen.url)
@@ -77,19 +79,15 @@ export const useReviews = () => {
         file = new File([blob], filename, { type: blob.type })
       } else if (imagen instanceof File) {
         file = imagen
-        filename = `review-${generateSlug(reviewData.autor)}-${generateSlug(reviewData.titulo)}.${file.name.split('.').pop()}`
+        const extension = file.name.split('.').pop()
+        filename = `review-${generateSlug(reviewData.autor)}-${generateSlug(reviewData.titulo)}-${timestamp}-${randomId}.${extension}`
       } else {
         throw new Error('Formato de imagen no válido')
       }
 
       const storagePath = await uploadToStorage(file, filename)
       
-      const { data } = useSupabaseClient()
-        .storage
-        .from('reviews-imagenes')
-        .getPublicUrl(storagePath)
-
-      return data.publicUrl
+      return getReviewImageUrl(storagePath, true)
 
     } catch (error) {
       console.error('Error uploading review image:', error)
@@ -101,6 +99,11 @@ export const useReviews = () => {
     const { deleteReviewImage: deleteFromStorage } = useStorage()
 
     try {
+      if (!imageUrl || typeof imageUrl !== 'string') {
+        console.warn('Invalid image URL for deletion:', imageUrl)
+        return
+      }
+
       const urlParts = imageUrl.split('/reviews-imagenes/')
       if (urlParts.length > 1) {
         const storagePath = urlParts[1]

@@ -9,7 +9,7 @@
         </FormFieldsContainer>
 
         <FormFieldsContainer>
-            <FormImageField v-model="imagePreview" id="imagen" label="Imagen" :error="errors.imagen"
+            <FormReviewImageField v-model="imagePreview" id="imagen" label="Imagen" :error="errors.imagen"
                 @upload-start="handleImageStart" @upload-complete="handleImageComplete" required />
             <FormTextField v-model="formData.rating" label="Valoración" id="rating" placeholder="Estrellas 1 al 5" 
                 required :error="errors.rating" type="number" step="0.5" min="1" max="5" />
@@ -185,8 +185,8 @@ const handleSubmit = async () => {
             provincia: formData.provincia.trim()
         }
 
-        if (imagen.value) {
-            reviewData.img = imagen.value
+        if (props.isEditing && !imagen.value) {
+            reviewData.img = formData.img
         }
 
         emit('submit', {

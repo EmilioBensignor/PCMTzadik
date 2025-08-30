@@ -26,11 +26,6 @@
 
             <input ref="fileInput" type="file" accept="image/*" @change="handleFileSelect" class="hidden"
                 :id="inputId" />
-
-            <div v-if="uploading" class="w-full bg-gray-200 rounded-full h-2">
-                <div class="bg-primary h-2 rounded-full transition-all duration-300"
-                    :style="{ width: uploadProgress + '%' }"></div>
-            </div>
         </div>
 
         <FormError v-if="error && showError">{{ error }}</FormError>
@@ -70,9 +65,6 @@ const emit = defineEmits(['update:modelValue', 'upload-start', 'upload-complete'
 const fileInput = ref(null)
 const imagePreview = ref('')
 const fileName = ref('')
-const isDragging = ref(false)
-const uploading = ref(false)
-const uploadProgress = ref(0)
 const showError = ref(false)
 
 const inputId = computed(() => props.id)
@@ -108,20 +100,9 @@ const handleFileSelect = (event) => {
 }
 
 const handleDrop = (event) => {
-    isDragging.value = false
     const files = event.dataTransfer.files
     if (files.length > 0) {
         processFile(files[0])
-    }
-}
-
-const handleDragEnter = () => {
-    isDragging.value = true
-}
-
-const handleDragLeave = (event) => {
-    if (!event.currentTarget.contains(event.relatedTarget)) {
-        isDragging.value = false
     }
 }
 
@@ -137,8 +118,10 @@ const processFile = async (file) => {
         }
         reader.readAsDataURL(file)
 
-        // Simular subida para productos
-        await simulateUpload(file)
+        // Emitir el archivo real para reviews
+        emit('upload-start', file)
+        emit('upload-complete', imagePreview.value)
+        emit('update:modelValue', imagePreview.value)
 
         if (showError.value) {
             showError.value = false
@@ -150,33 +133,6 @@ const processFile = async (file) => {
     }
 }
 
-const simulateUpload = async (file) => {
-    uploading.value = true
-    uploadProgress.value = 0
-
-    emit('upload-start', file)
-
-    try {
-        const interval = setInterval(() => {
-            uploadProgress.value += 10
-            if (uploadProgress.value >= 100) {
-                clearInterval(interval)
-                uploading.value = false
-
-                const finalUrl = imagePreview.value
-                emit('update:modelValue', finalUrl)
-                emit('upload-complete', finalUrl)
-            }
-        }, 100)
-
-    } catch (error) {
-        uploading.value = false
-        uploadProgress.value = 0
-        throw error
-    }
-}
-
-
 const removeImage = () => {
     imagePreview.value = ''
     fileName.value = ''
@@ -186,7 +142,6 @@ const removeImage = () => {
         fileInput.value.value = ''
     }
 }
-
 
 watchEffect(() => {
     if (props.error) {

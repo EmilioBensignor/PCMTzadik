@@ -19,7 +19,6 @@ export const useStorage = () => {
     const extension = originalName.split('.').pop().toLowerCase()
     const suffix = isPrincipal ? 'principal' : index.toString().padStart(2, '0')
 
-    // Limpiar el slug para nombres de archivo (solo letras, números y guiones)
     const cleanSlug = productSlug.toLowerCase()
       .replace(/[^a-z0-9-]/g, '-')
       .replace(/-+/g, '-')
@@ -105,7 +104,7 @@ export const useStorage = () => {
         .from('productos-imagenes')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: true // Permitir sobreescribir si ya existe
+          upsert: true
         })
 
       if (uploadError) throw uploadError
@@ -153,7 +152,7 @@ export const useStorage = () => {
 
       const uploadPromises = files.map(async (file, index) => {
         uploadProgress.value = Math.round((index / files.length) * 100)
-        const isPrincipal = index === 0 // Primera imagen es principal
+        const isPrincipal = index === 0
         return await uploadProductoImagenSeoFriendly(file, productSlug, index + 1, isPrincipal)
       })
 
@@ -261,9 +260,16 @@ export const useStorage = () => {
     }
   }
 
-  const getImageUrl = (storagePath) => {
+  const getImageUrl = (storagePath, cacheBust = false) => {
     if (!storagePath) return null
-    return `${config.public.supabase.url}/storage/v1/object/public/productos-imagenes/${storagePath}`
+    let url = `${config.public.supabase.url}/storage/v1/object/public/productos-imagenes/${storagePath}`
+    
+    if (cacheBust) {
+      const timestamp = Date.now()
+      url += `?v=${timestamp}`
+    }
+    
+    return url
   }
 
   const getVideoUrl = (storagePath) => {
@@ -400,17 +406,39 @@ export const useStorage = () => {
 
       validateImageFile(file)
 
-      const { data, error: uploadError } = await supabase.storage
-        .from('reviews-imagenes')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false
-        })
+      let finalFileName = fileName
+      let uploadError = null
+      let attemptCount = 0
+      const maxAttempts = 10
+
+      while (attemptCount < maxAttempts) {
+        const { data, error: tryUploadError } = await supabase.storage
+          .from('reviews-imagenes')
+          .upload(finalFileName, file, {
+            cacheControl: '3600',
+            upsert: false
+          })
+
+        if (!tryUploadError) {
+          uploadProgress.value = 100
+          return data.path
+        }
+
+        if (tryUploadError.message && tryUploadError.message.includes('already exists')) {
+          attemptCount++
+          const timestamp = Date.now()
+          const random = Math.random().toString(36).substring(2, 6)
+          const extension = fileName.split('.').pop()
+          const baseName = fileName.split('.').slice(0, -1).join('.')
+          finalFileName = `${baseName}-${timestamp}-${random}.${extension}`
+        } else {
+          uploadError = tryUploadError
+          break
+        }
+      }
 
       if (uploadError) throw uploadError
-
-      uploadProgress.value = 100
-      return data.path
+      throw new Error(`No se pudo subir la imagen después de ${maxAttempts} intentos`)
 
     } catch (err) {
       error.value = err.message
@@ -438,9 +466,16 @@ export const useStorage = () => {
     }
   }
 
-  const getReviewImageUrl = (storagePath) => {
+  const getReviewImageUrl = (storagePath, cacheBust = false) => {
     if (!storagePath) return null
-    return `${config.public.supabase.url}/storage/v1/object/public/reviews-imagenes/${storagePath}`
+    let url = `${config.public.supabase.url}/storage/v1/object/public/reviews-imagenes/${storagePath}`
+    
+    if (cacheBust) {
+      const timestamp = Date.now()
+      url += `?v=${timestamp}`
+    }
+    
+    return url
   }
 
   return {

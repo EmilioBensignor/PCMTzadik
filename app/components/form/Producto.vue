@@ -299,8 +299,12 @@ const removeLastImage = () => {
     }
 }
 
-const onImageUpload = (index, url) => {
-    productImages.value[index].url = url
+const onImageUpload = (index, data) => {
+    if (typeof data === 'string') {
+        productImages.value[index].url = data
+    } else if (data && data.url) {
+        productImages.value[index].url = data.url
+    }
 }
 
 const initializeForEdit = async () => {
@@ -332,7 +336,7 @@ const initializeForEdit = async () => {
         const imagenes = getImagenesByProducto(product.id)
         if (imagenes.length > 0) {
             productImages.value = imagenes.map(img => ({
-                url: getImageUrl(img.storage_path) || '',
+                url: getImageUrl(img.storage_path, true) || '', // Cache bust for editing
                 es_principal: img.es_principal,
                 alt_text: img.alt_text || '',
                 orden: img.orden
