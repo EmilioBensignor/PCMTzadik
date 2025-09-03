@@ -141,6 +141,10 @@ const props = defineProps({
     productData: {
         type: Object,
         default: () => ({})
+    },
+    initialCategory: {
+        type: [String, Number],
+        default: null
     }
 })
 
@@ -164,6 +168,10 @@ onMounted(async () => {
     await fetchCategorias()
     if (props.isEditing && props.productData.id) {
         await initializeForEdit()
+    } else if (props.initialCategory && !props.isEditing) {
+        selectedCategory.value = props.initialCategory
+        selectedCategoryId.value = props.initialCategory
+        await onCategoryChange(props.initialCategory)
     }
 })
 
@@ -336,7 +344,7 @@ const initializeForEdit = async () => {
         const imagenes = getImagenesByProducto(product.id)
         if (imagenes.length > 0) {
             productImages.value = imagenes.map(img => ({
-                url: getImageUrl(img.storage_path, true) || '', // Cache bust for editing
+                url: getImageUrl(img.storage_path, false) || '', // Remove cache bust to avoid CORS issues
                 es_principal: img.es_principal,
                 alt_text: img.alt_text || '',
                 orden: img.orden
@@ -409,4 +417,12 @@ watch(() => props.productData, async (newData) => {
         await initializeForEdit()
     }
 }, { deep: true })
+
+watch(() => props.initialCategory, async (newCategory) => {
+    if (newCategory && !props.isEditing && categorias.value.length > 0) {
+        selectedCategory.value = newCategory
+        selectedCategoryId.value = newCategory
+        await onCategoryChange(newCategory)
+    }
+})
 </script>

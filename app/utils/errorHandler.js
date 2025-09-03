@@ -7,6 +7,7 @@ const errorMessages = {
     'Email already taken': 'Este correo ya está registrado.',
     'Username taken': 'Este nombre de usuario ya está en uso. Por favor elige otro.',
     'Weak password': 'Tu contraseña debe ser más segura. Incluye al menos 8 caracteres, números y símbolos.',
+    'Password should contain at least one uppercase letter, one lowercase letter, one digit, and one special character': 'Tu contraseña debe contener al menos una mayúscula, una minúscula, un número y un carácter especial.',
     'Insufficient permissions': 'No tienes permisos para realizar esta acción. Contacta al administrador si crees que es un error.',
     'Invalid API key': 'Error de configuración del sistema. Por favor contacta al equipo de Peripeteia.',
     'JWT expired': 'Tu sesión ha expirado por inactividad. Por favor inicia sesión nuevamente.',

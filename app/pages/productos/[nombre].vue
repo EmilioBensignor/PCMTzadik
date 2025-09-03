@@ -8,7 +8,7 @@
             <HeadingH1>{{ categoryName }}</HeadingH1>
             <p>{{ categoryProducts.length }} producto{{ categoryProducts.length !== 1 ? 's' : '' }} disponible{{
                 categoryProducts.length !== 1 ? 's' : '' }}</p>
-            <ButtonPrimary :to="ROUTE_NAMES.PRODUCTOS_CREAR">
+            <ButtonPrimary :to="`${ROUTE_NAMES.PRODUCTOS_CREAR}?categoria=${encodeURIComponent(categoryName)}`">
                 Agregar Producto
             </ButtonPrimary>
             <FormTextField id="search-productos" v-model="searchQuery" placeholder="Buscar productos..." type="search"

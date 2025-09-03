@@ -7,7 +7,7 @@
         </NuxtLink>
         <HeadingH1>Crear Producto</HeadingH1>
 
-        <FormProducto :is-editing="false" @submit="handleSubmit" @cancel="handleCancel" />
+        <FormProducto :is-editing="false" :initial-category="initialCategory" @submit="handleSubmit" @cancel="handleCancel" />
     </DefaultSection>
 </template>
 
@@ -16,6 +16,22 @@ import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES.js'
 
 const { success, error } = useNotification()
 const { createProductoCompleto } = useProductos()
+const { categorias, fetchCategorias } = useCategorias()
+
+const route = useRoute()
+const initialCategory = ref(null)
+
+onMounted(async () => {
+    await fetchCategorias()
+    
+    const categoryFromQuery = route.query.categoria
+    if (categoryFromQuery) {
+        const foundCategory = categorias.value.find(cat => cat.nombre === categoryFromQuery)
+        if (foundCategory) {
+            initialCategory.value = foundCategory.id
+        }
+    }
+})
 
 const handleSubmit = async (formData) => {
     try {
