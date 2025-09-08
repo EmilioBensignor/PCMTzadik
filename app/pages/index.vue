@@ -7,14 +7,15 @@
         <div v-if="loading || loadingData" class="flex justify-center items-center py-12">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
-        
+
         <div v-else class="w-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
             <div v-for="categoria in categorias" :key="categoria.id" @click="navigateToCategory(categoria.nombre)"
                 class="w-full flex flex-col justify-between gap-3 border-2 border-primary/50 shadow-1 rounded-2xl p-4 cursor-pointer">
                 <div class="flex flex-col gap-3">
                     <div class="flex justify-between items-center">
                         <p class="text-xl lg:text-2xl">{{ categoria.nombre }}</p>
-                        <Icon :name="`tabler:${categoria.icon}`" class="w-6 lg:w-8 h-6 lg:h-8 text-secondary" />
+                        <NuxtImg :src="categoria.icon" :alt="categoria.nombre"
+                            class="w-6 lg:w-8 h-6 lg:h-8 text-primary object-contain" />
                     </div>
                     <div class="flex items-center justify-between lg:text-xl">
                         <p>Productos:</p>
@@ -23,12 +24,14 @@
                     <div v-if="getSubcategoriasByCategoria(categoria.id).length > 0" class="flex flex-col gap-2">
                         <div class="flex items-center justify-between text-sm lg:text-base">
                             <p>Subcategorías:</p>
-                            <button @click.stop="editSubcategories(categoria)" class="text-terciary hover:text-terciary-dark">
+                            <button @click.stop="editSubcategories(categoria)"
+                                class="text-terciary hover:text-terciary-dark">
                                 Editar
                             </button>
                         </div>
                         <div class="flex flex-wrap gap-1 lg:gap-2">
-                            <span v-for="subcategoria in getSubcategoriasByCategoria(categoria.id).slice(0, 3)" :key="subcategoria.id"
+                            <span v-for="subcategoria in getSubcategoriasByCategoria(categoria.id).slice(0, 3)"
+                                :key="subcategoria.id"
                                 class="bg-gray-300/65 border text-xs lg:text-sm rounded lg:rounded-lg px-2 py-1">
                                 {{ subcategoria.nombre }}
                             </span>
@@ -40,8 +43,8 @@
                     </div>
                     <div v-else class="flex items-center justify-between text-sm lg:text-base text-gray-500">
                         <p>Sin subcategorías</p>
-                        <button @click.stop="editSubcategories(categoria)" 
-                                class="flex items-center gap-1 text-terciary hover:text-terciary-dark transition-colors">
+                        <button @click.stop="editSubcategories(categoria)"
+                            class="flex items-center gap-1 text-terciary hover:text-terciary-dark transition-colors">
                             <Icon name="tabler:plus" class="w-4 h-4" />
                             Agregar
                         </button>
@@ -52,8 +55,7 @@
         </div>
 
         <div v-if="showSubcategoryModal"
-            class="flex items-center justify-center fixed z-50 inset-0 bg-black bg-opacity-50"
-            @click="closeModal">
+            class="flex items-center justify-center fixed z-50 inset-0 bg-black bg-opacity-50" @click="closeModal">
             <div class="w-[85%] max-w-md lg:max-w-3xl flex flex-col gap-3 bg-light rounded-lg p-6" @click.stop>
                 <div class="flex flex-col gap-2">
                     <p class="text-xl lg:text-2xl">{{ editingCategory?.nombre }}</p>
@@ -104,7 +106,7 @@ onMounted(async () => {
         await fetchCategorias()
         await fetchSubcategorias()
         await fetchProductCounts()
-        
+
         clearFilters()
     } catch (error) {
         console.error('Error loading data:', error)
@@ -123,18 +125,18 @@ const fetchProductCounts = async () => {
     try {
         const supabase = useSupabaseClient()
         const counts = {}
-        
+
         // Fetch count for each category in parallel
         const countPromises = categorias.value.map(async (categoria) => {
             const { count, error } = await supabase
                 .from('productos')
                 .select('*', { count: 'exact', head: true })
                 .eq('categoria_id', categoria.id)
-            
+
             if (error) throw error
             counts[categoria.id] = count || 0
         })
-        
+
         await Promise.all(countPromises)
         productCounts.value = counts
     } catch (error) {
@@ -152,11 +154,11 @@ const navigateToCategory = async (categoryName) => {
     if (categoria) {
         // Apply the category filter before navigation
         setFilter('categoria_id', categoria.id)
-        
+
         // Preload products for this category
         await fetchProductos({ includeImages: false })
     }
-    
+
     navigateTo(ROUTE_NAMES.PRODUCTOS_CATEGORIA(categoryName))
 }
 
@@ -166,7 +168,7 @@ const editSubcategories = async (categoria) => {
     editingCategory.value = categoria
     await fetchSubcategorias(categoria.id)
     const existingSubs = getSubcategoriasPorCategoria(categoria.id).map(sub => sub.nombre)
-    
+
     editingSubcategorias.value = existingSubs.length > 0 ? existingSubs : ['']
     showSubcategoryModal.value = true
 }
@@ -189,7 +191,7 @@ const saveSubcategories = async () => {
     if (editingCategory.value) {
         try {
             const existingSubs = getSubcategoriasPorCategoria(editingCategory.value.id)
-            
+
             for (const nombre of editingSubcategorias.value) {
                 if (nombre.trim() && !existingSubs.find(sub => sub.nombre === nombre.trim())) {
                     await createSubcategoria({
@@ -198,13 +200,13 @@ const saveSubcategories = async () => {
                     })
                 }
             }
-            
+
             for (const existingSub of existingSubs) {
                 if (!editingSubcategorias.value.includes(existingSub.nombre)) {
                     await deleteSubcategoria(existingSub.id)
                 }
             }
-            
+
             await fetchSubcategorias(editingCategory.value.id)
         } catch (error) {
             console.error('Error saving subcategories:', error)
