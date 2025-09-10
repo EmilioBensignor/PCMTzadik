@@ -2,7 +2,7 @@ import { useProductosStore } from '~/stores/productos'
 
 export const useProductos = () => {
   const productosStore = useProductosStore()
-  
+
   const productos = computed(() => productosStore.productos)
   const currentProduct = computed(() => productosStore.currentProduct)
   const loading = computed(() => productosStore.loading)
@@ -14,70 +14,76 @@ export const useProductos = () => {
   const getProductoById = (id) => productosStore.getProductoById(id)
   const getProductosByCategoria = (categoriaId) => productosStore.getProductosByCategoria(categoriaId)
   const getImagenesByProducto = (productoId) => productosStore.getImagenesByProducto(productoId)
-  
+
   const createProductoCompleto = async (productoData, imagenes = []) => {
     try {
       if (!productoData.slug && productoData.titulo) {
         productoData.slug = await generateUniqueSlug(productoData.titulo)
       }
-      
+
       productoData.activo = productoData.activo !== false
       productoData.destacado = productoData.destacado || false
-      
+
       const producto = await productosStore.createProducto(productoData)
-      
+
       if (imagenes.length > 0) {
         await handleImagenesUploadSeoFriendly(producto, imagenes)
       }
-      
+
       await productosStore.fetchProductoById(producto.id, { includeAll: true })
-      
+
       return producto
     } catch (error) {
       console.error('Error creating producto completo:', error)
       throw error
     }
   }
-  
+
   const updateProductoCompleto = async (id, productoData, imagenes = []) => {
     try {
       if (productoData.titulo && (!productoData.slug || productoData.slug === '')) {
         productoData.slug = await generateUniqueSlug(productoData.titulo, id)
       }
-      
+
       const producto = await productosStore.updateProducto(id, productoData)
-      
+
       if (imagenes.length > 0) {
-        await deleteAllProductoImagenes(id)
-        
-        const productoConSlug = { ...producto, slug: productoData.slug || producto.slug }
-        await handleImagenesUploadSeoFriendly(productoConSlug, imagenes)
+        const hasNewImages = imagenes.some(img => img.url && img.url.startsWith('data:'))
+        const currentImagenes = getImagenesByProducto(id)
+        const hasChangedImageCount = imagenes.length !== currentImagenes.length
+
+        if (hasNewImages || hasChangedImageCount) {
+          await deleteAllProductoImagenes(id)
+
+          const productoConSlug = { ...producto, slug: productoData.slug || producto.slug }
+          await handleImagenesUploadSeoFriendly(productoConSlug, imagenes)
+        }
       }
-      
+
       await productosStore.fetchProductoById(id, { includeAll: true })
-      
+
       return producto
     } catch (error) {
       console.error('Error updating producto completo:', error)
       throw error
     }
   }
-  
+
   const handleImagenesUpload = async (productoId, imagenes) => {
     const { uploadProductoImagen } = useStorage()
-    
+
     try {
       const uploadPromises = imagenes.map(async (imagen, index) => {
         let storagePath
         let filename = `imagen-${index + 1}.jpg`
         let fileSize = 0
         let mimeType = 'image/jpeg'
-        
+
         if (imagen.url && imagen.url.startsWith('data:')) {
           const response = await fetch(imagen.url)
           const blob = await response.blob()
           const file = new File([blob], filename, { type: blob.type })
-          
+
           storagePath = await uploadProductoImagen(file, productoId)
           filename = file.name
           fileSize = file.size
@@ -87,7 +93,7 @@ export const useProductos = () => {
         } else {
           throw new Error('Formato de imagen no válido')
         }
-        
+
         return useSupabaseClient()
           .from('producto_imagenes')
           .insert({
@@ -101,9 +107,9 @@ export const useProductos = () => {
             es_principal: index === 0
           })
       })
-      
+
       await Promise.all(uploadPromises)
-      
+
       await productosStore.fetchProductosImagenes([productoId])
     } catch (error) {
       console.error('Error uploading imagenes:', error)
@@ -113,23 +119,23 @@ export const useProductos = () => {
 
   const handleImagenesUploadSeoFriendly = async (producto, imagenes) => {
     const { uploadProductoImagenSeoFriendly } = useStorage()
-    
+
     try {
       const uploadPromises = imagenes.map(async (imagen, index) => {
         let storagePath
         let filename = `${producto.slug}-${index === 0 ? 'principal' : (index + 1).toString().padStart(2, '0')}.jpg`
         let fileSize = 0
         let mimeType = 'image/jpeg'
-        
+
         if (imagen.url && imagen.url.startsWith('data:')) {
           const response = await fetch(imagen.url)
           const blob = await response.blob()
           const file = new File([blob], filename, { type: blob.type })
-          
+
           storagePath = await uploadProductoImagenSeoFriendly(
-            file, 
-            producto.slug, 
-            index + 1, 
+            file,
+            producto.slug,
+            index + 1,
             index === 0
           )
           filename = file.name
@@ -142,14 +148,14 @@ export const useProductos = () => {
           } else {
             storagePath = imagen.url
           }
-          
+
           filename = imagen.filename || filename
           fileSize = imagen.file_size || 0
           mimeType = imagen.mime_type || 'image/jpeg'
         } else {
           throw new Error('Formato de imagen no válido')
         }
-        
+
         return useSupabaseClient()
           .from('producto_imagenes')
           .insert({
@@ -163,29 +169,29 @@ export const useProductos = () => {
             es_principal: index === 0
           })
       })
-      
+
       await Promise.all(uploadPromises)
-      
+
       await productosStore.fetchProductosImagenes([producto.id])
-      
+
     } catch (error) {
       console.error('Error uploading imagenes SEO-friendly:', error)
       throw error
     }
   }
-  
-  
+
+
   const deleteProductoImagen = async (imagenId, storagePath) => {
     const { deleteProductoImagen: deleteFromStorage } = useStorage()
-    
+
     try {
       await deleteFromStorage(storagePath)
-      
+
       await useSupabaseClient()
         .from('producto_imagenes')
         .delete()
         .eq('id', imagenId)
-      
+
       productosStore.productosImagenes = productosStore.productosImagenes.filter(
         img => img.id !== imagenId
       )
@@ -197,7 +203,7 @@ export const useProductos = () => {
 
   const deleteAllProductoImagenes = async (productoId) => {
     const { deleteProductoImagen: deleteFromStorage } = useStorage()
-    
+
     try {
       const { data: imagenes, error: fetchError } = await useSupabaseClient()
         .from('producto_imagenes')
@@ -213,7 +219,7 @@ export const useProductos = () => {
           } catch (storageError) {
             console.warn(`Error deleting image from storage: ${imagen.storage_path}`, storageError)
           }
-          
+
           return useSupabaseClient()
             .from('producto_imagenes')
             .delete()
@@ -231,11 +237,11 @@ export const useProductos = () => {
       throw error
     }
   }
-  
-  
+
+
   const searchProductos = async (searchParams = {}) => {
     productosStore.clearFilters()
-    
+
     Object.entries(searchParams).forEach(([key, value]) => {
       if (key === 'datos_dinamicos') {
         Object.entries(value).forEach(([campo, valor]) => {
@@ -245,10 +251,10 @@ export const useProductos = () => {
         productosStore.setFilter(key, value)
       }
     })
-    
+
     await productosStore.fetchProductos({ includeImages: true })
   }
-  
+
   const getFeaturedProductos = async (limit = 8) => {
     try {
       const { data, error } = await useSupabaseClient()
@@ -261,16 +267,16 @@ export const useProductos = () => {
         .eq('producto_imagenes.es_principal', true)
         .order('created_at', { ascending: false })
         .limit(limit)
-      
+
       if (error) throw error
-      
+
       return data || []
     } catch (error) {
       console.error('Error fetching featured productos:', error)
       return []
     }
   }
-  
+
   const getRelatedProductos = async (productoId, categoriaId, limit = 4) => {
     try {
       const { data, error } = await useSupabaseClient()
@@ -284,26 +290,26 @@ export const useProductos = () => {
         .eq('producto_imagenes.es_principal', true)
         .order('created_at', { ascending: false })
         .limit(limit)
-      
+
       if (error) throw error
-      
+
       return data || []
     } catch (error) {
       console.error('Error fetching related productos:', error)
       return []
     }
   }
-  
+
   const formatDynamicData = (producto, campos) => {
     if (!producto.datos_dinamicos || !campos) return {}
-    
+
     const formatted = {}
-    
+
     campos.forEach(campo => {
       const value = producto.datos_dinamicos[campo.nombre_campo]
       if (value !== undefined && value !== null && value !== '') {
         let formattedValue = value
-        
+
         switch (campo.tipo) {
           case 'currency':
             formattedValue = new Intl.NumberFormat('es-CO', {
@@ -324,14 +330,14 @@ export const useProductos = () => {
           default:
             formattedValue = value
         }
-        
+
         formatted[campo.label] = formattedValue
       }
     })
-    
+
     return formatted
   }
-  
+
   const generateSlug = (titulo) => {
     return titulo
       .toLowerCase()
@@ -342,29 +348,29 @@ export const useProductos = () => {
       .replace(/-+/g, '-')
       .trim('-')
   }
-  
+
   const generateUniqueSlug = async (titulo, excludeId = null) => {
     const baseSlug = generateSlug(titulo)
     let slug = baseSlug
     let counter = 1
-    
+
     while (true) {
       try {
         let query = useSupabaseClient()
           .from('productos')
           .select('id')
           .eq('slug', slug)
-          
+
         if (excludeId) {
           query = query.neq('id', excludeId)
         }
-        
+
         const { data } = await query
-        
+
         if (!data || data.length === 0) {
           return slug
         }
-        
+
         slug = `${baseSlug}-${counter}`
         counter++
       } catch (error) {
@@ -373,32 +379,32 @@ export const useProductos = () => {
       }
     }
   }
-  
+
   const addVideoToProduct = async (productoId, videoData) => {
     try {
       const producto = await productosStore.getProductoById(productoId)
       const videos = producto.videos ? [...producto.videos, videoData] : [videoData]
-      
+
       await productosStore.updateProducto(productoId, { videos })
     } catch (error) {
       console.error('Error adding video to product:', error)
       throw error
     }
   }
-  
+
   const removeVideoFromProduct = async (productoId, videoIndex) => {
     try {
       const producto = await productosStore.getProductoById(productoId)
       const videos = producto.videos ? [...producto.videos] : []
       videos.splice(videoIndex, 1)
-      
+
       await productosStore.updateProducto(productoId, { videos })
     } catch (error) {
       console.error('Error removing video from product:', error)
       throw error
     }
   }
-  
+
   return {
     productos,
     currentProduct,
@@ -408,34 +414,34 @@ export const useProductos = () => {
     currentPage,
     totalCount,
     filters,
-    
+
     getProductoById,
     getProductosByCategoria,
     getImagenesByProducto,
-    
+
     createProductoCompleto,
     updateProductoCompleto,
     deleteProducto: productosStore.deleteProducto,
-    
+
     handleImagenesUpload,
     handleImagenesUploadSeoFriendly,
     deleteProductoImagen,
     deleteAllProductoImagenes,
     addVideoToProduct,
     removeVideoFromProduct,
-    
+
     searchProductos,
     setFilter: productosStore.setFilter,
     setDynamicFilter: productosStore.setDynamicFilter,
     clearFilters: productosStore.clearFilters,
     setSorting: productosStore.setSorting,
     setPage: productosStore.setPage,
-    
+
     fetchProductos: productosStore.fetchProductos,
     fetchProductoById: productosStore.fetchProductoById,
     getFeaturedProductos,
     getRelatedProductos,
-    
+
     formatDynamicData,
     generateSlug,
     generateUniqueSlug,

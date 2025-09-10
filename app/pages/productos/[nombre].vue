@@ -24,7 +24,7 @@
                 <div class="flex flex-col gap-3 p-4">
                     <p class="text-2xl font-medium">{{ producto.titulo }}</p>
                     <p class="text-xl font-bold text-dark">
-                        {{ formatCurrency(producto.precio) }}
+                        {{ formatCurrency(producto.precio) }} {{ getCurrencyName(producto.moneda) }}
                     </p>
                     <div class="flex justify-between">
                         <button @click.stop="editProduct(producto)"
@@ -158,6 +158,10 @@ const formatCurrency = (amount) => {
     }).format(amount)
 }
 
+const getCurrencyName = (monedaValue) => {
+    return monedaValue ? 'USD' : 'ARS'
+}
+
 const handleImageError = (event) => {
     event.target.src = '/images/Placeholder.png'
 }
@@ -170,7 +174,6 @@ const getMainImage = (producto) => {
         return getImageUrl(mainImage.storage_path)
     }
 
-    // Fallback to placeholder
     return '/images/Placeholder.png'
 }
 
