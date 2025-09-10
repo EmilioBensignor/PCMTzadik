@@ -25,13 +25,14 @@
             <FormFieldsContainer>
                 <FormTextField id="precio" v-model="formData.precio" label="Precio" required :error="errors.precio"
                     type="number" step="0.01" placeholder="Ingresa el precio" />
-
-                <FormTextField id="oferta" v-model="formData.oferta" label="Oferta" :error="errors.oferta"
-                    placeholder="Ingresa el texto de oferta" />
+                <FormSwitch id="moneda" v-model="formData.moneda" label="Moneda" 
+                    left-label="Pesos" right-label="USD" required />
             </FormFieldsContainer>
 
             <FormFieldsContainer>
                 <FormSwitch id="destacado" v-model="formData.destacado" label="Producto Destacado" />
+                <FormTextField id="oferta" v-model="formData.oferta" label="Oferta" :error="errors.oferta"
+                    placeholder="Ingresa el texto de oferta" />
             </FormFieldsContainer>
 
             <FormFieldsContainer>
@@ -275,6 +276,7 @@ const onCategoryChange = async (categoryId) => {
             titulo: '',
             condicion: '',
             precio: '',
+            moneda: true,
             oferta: '',
             destacado: false,
             descripcion_larga: '',
@@ -334,6 +336,7 @@ const initializeForEdit = async () => {
             titulo: product.titulo || '',
             condicion: product.condicion || '',
             precio: product.precio || '',
+            moneda: product.moneda !== undefined ? product.moneda : true,
             oferta: product.oferta || '',
             destacado: product.destacado || false,
             descripcion_larga: product.descripcion_larga || '',
@@ -376,7 +379,7 @@ const handleSubmit = async () => {
     isSubmitting.value = true
 
     try {
-        const { titulo, condicion, precio, oferta, destacado, descripcion_larga, descripcion_corta, ...datosDinamicos } = formData.value
+        const { titulo, condicion, precio, moneda, oferta, destacado, descripcion_larga, descripcion_corta, ...datosDinamicos } = formData.value
 
         const productoData = {
             categoria_id: selectedCategoryId.value,
@@ -384,6 +387,7 @@ const handleSubmit = async () => {
             titulo,
             condicion,
             precio: parseFloat(precio) || 0,
+            moneda: moneda !== undefined ? moneda : true,
             oferta: oferta || null,
             destacado: destacado || false,
             descripcion_larga,

@@ -3,6 +3,11 @@
         <FormLabel :id="id" :required="required" v-if="label">{{ label }}</FormLabel>
 
         <div class="flex items-center gap-3">
+            <span v-if="leftLabel" :class="[
+                'text-sm font-medium transition-colors',
+                !modelValue ? 'text-dark' : 'text-gray-mid'
+            ]">{{ leftLabel }}</span>
+            
             <button :id="inputId" type="button" @click="toggle" :class="[
                 'relative inline-flex h-6 w-11 items-center rounded-full transition-colors outline-none',
                 modelValue ? 'bg-terciary' : 'bg-gray-mid'
@@ -12,6 +17,11 @@
                     modelValue ? 'translate-x-6' : 'translate-x-1'
                 ]" />
             </button>
+            
+            <span v-if="rightLabel" :class="[
+                'text-sm font-medium transition-colors',
+                modelValue ? 'text-dark' : 'text-gray-mid'
+            ]">{{ rightLabel }}</span>
         </div>
 
         <FormError v-if="error && showError">{{ error }}</FormError>
@@ -25,6 +35,14 @@ const props = defineProps({
         default: false
     },
     label: {
+        type: String,
+        default: ''
+    },
+    leftLabel: {
+        type: String,
+        default: ''
+    },
+    rightLabel: {
         type: String,
         default: ''
     },
