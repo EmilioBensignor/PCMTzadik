@@ -46,24 +46,18 @@
             </FormFieldsContainer>
 
             <div class="w-full flex flex-col gap-4">
-                <FormLabel class="text-lg font-medium" required>Imágenes del Producto</FormLabel>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <FormImageField v-for="(image, index) in productImages" :key="`image-${index}`"
-                        :id="`imagen-${index}`" v-model="productImages[index].url"
-                        :label="`Imagen ${index + 1} ${productImages[index].es_principal ? '(Principal)' : ''}`"
-                        @upload-complete="onImageUpload(index, $event)" />
-                </div>
-
-                <div class="flex gap-6">
-                    <ButtonPrimary @click="addImageSlot" type="button" class="!w-auto !px-4">
-                        Agregar otra imagen
-                    </ButtonPrimary>
-                    <ButtonTerciary v-if="productImages.length > 1" @click="removeLastImage" type="button"
-                        class="!w-auto !bg-error !px-4">
-                        Quitar última imagen
-                    </ButtonTerciary>
-                </div>
+                <FormMultiImageField
+                    id="productos-imagenes"
+                    v-model="productImages"
+                    label="Imágenes del Producto"
+                    :max-files="10"
+                    :max-size="5242880"
+                    required
+                    :error="errors.imagenes"
+                    @upload-start="onImagesUploadStart"
+                    @upload-complete="onImagesUploadComplete"
+                    @upload-error="onImagesUploadError"
+                />
             </div>
 
             <div class="w-full flex flex-col gap-4">
@@ -162,7 +156,7 @@ const formData = ref({})
 const errors = ref({})
 const isSubmitting = ref(false)
 const formFields = ref([])
-const productImages = ref([{ url: '', es_principal: true, alt_text: '', orden: 1 }])
+const productImages = ref([])
 const productVideo = ref({ titulo: '', url: '' })
 
 onMounted(async () => {
@@ -294,27 +288,18 @@ const toggleSubcategory = (subcategoryValue) => {
     }
 }
 
-const addImageSlot = () => {
-    productImages.value.push({
-        url: '',
-        es_principal: false,
-        alt_text: '',
-        orden: productImages.value.length + 1
-    })
+// Handlers para MultiImageField
+const onImagesUploadStart = (files) => {
+    console.log('Iniciando subida de imágenes:', files.length)
 }
 
-const removeLastImage = () => {
-    if (productImages.value.length > 1) {
-        productImages.value.pop()
-    }
+const onImagesUploadComplete = (newImages) => {
+    console.log('Imágenes procesadas:', newImages.length)
 }
 
-const onImageUpload = (index, data) => {
-    if (typeof data === 'string') {
-        productImages.value[index].url = data
-    } else if (data && data.url) {
-        productImages.value[index].url = data.url
-    }
+const onImagesUploadError = (errorMessage) => {
+    errors.value.imagenes = errorMessage
+    console.error('Error al subir imágenes:', errorMessage)
 }
 
 const initializeForEdit = async () => {
@@ -346,12 +331,22 @@ const initializeForEdit = async () => {
 
         const imagenes = getImagenesByProducto(product.id)
         if (imagenes.length > 0) {
-            productImages.value = imagenes.map(img => ({
-                url: getImageUrl(img.storage_path, false) || '', // Remove cache bust to avoid CORS issues
-                es_principal: img.es_principal,
-                alt_text: img.alt_text || '',
-                orden: img.orden
-            }))
+            productImages.value = imagenes
+                .sort((a, b) => (a.orden || 0) - (b.orden || 0))
+                .map((img, index) => ({
+                    id: img.id,
+                    name: img.filename || `imagen-${index + 1}.jpg`,
+                    url: getImageUrl(img.storage_path, false) || '',
+                    preview: getImageUrl(img.storage_path, false) || '',
+                    file: null,
+                    isExisting: true,
+                    orden: img.orden || (index + 1),
+                    es_principal: img.es_principal || (index === 0),
+                    filename: img.filename,
+                    file_size: img.file_size,
+                    mime_type: img.mime_type,
+                    storage_path: img.storage_path
+                }))
         }
 
         if (product.videos && Array.isArray(product.videos) && product.videos.length > 0) {
@@ -370,10 +365,14 @@ const handleSubmit = async () => {
         return
     }
 
-    const imagenesFiltradas = productImages.value.filter(img => img.url && img.url.trim() !== '')
-    if (imagenesFiltradas.length === 0) {
-        errors.value = { general: 'Debe agregar al menos una imagen al producto' }
+    if (productImages.value.length === 0) {
+        errors.value = { imagenes: 'Debe agregar al menos una imagen al producto' }
         return
+    }
+
+    // Limpiar errores de imágenes si hay imágenes válidas
+    if (errors.value.imagenes) {
+        delete errors.value.imagenes
     }
 
     isSubmitting.value = true
@@ -403,7 +402,7 @@ const handleSubmit = async () => {
 
         emit('submit', {
             productoData,
-            imagenes: imagenesFiltradas,
+            imagenes: productImages.value,
             isEditing: props.isEditing,
             productId: props.productData?.id
         })
