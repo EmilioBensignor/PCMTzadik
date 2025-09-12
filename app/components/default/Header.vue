@@ -6,7 +6,7 @@
         </button>
 
         <NuxtLink :to="ROUTE_NAMES.HOME">
-            <NuxtImg src="/images/Logo-Peripeteia-Blanco.svg" alt="Logo Tour Experto" class="h-8 lg:h-12" />
+            <NuxtImg src="/images/Logo-Tzadik-Blanco.svg" alt="Logo Tzadik Blanco" class="h-8 lg:h-12" />
         </NuxtLink>
 
         <NavDrawer :is-open="isDrawerOpen" @close="closeDrawer" />
