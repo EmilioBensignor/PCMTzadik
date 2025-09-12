@@ -9,10 +9,10 @@ export default {
         },
         extend: {
             colors: {
-                primary: "#FF8259",
-                primaryHover: "#FF8259",
-                secondary: "#FF541C",
-                secondaryHover: "#FF541C",
+                primary: "#FF541C",
+                primaryHover: "#FF541C",
+                secondary: "#FF8259",
+                secondaryHover: "#FF8259",
                 terciary: "#B82D18",
                 accent: "#FCC008",
                 light: '#FBF9F9',
