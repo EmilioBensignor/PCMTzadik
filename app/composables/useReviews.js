@@ -42,14 +42,20 @@ export const useReviews = () => {
 
   const updateReviewCompleta = async (id, reviewData, nuevaImagen = null) => {
     try {
+      const currentReview = getReviewById(id)
       let imageUrl = reviewData.img
 
       if (nuevaImagen) {
-        if (reviewData.img) {
-          await deleteReviewImage(reviewData.img)
+        if (currentReview?.img) {
+          await deleteReviewImage(currentReview.img)
         }
-        
+
         imageUrl = await uploadReviewImage(nuevaImagen, reviewData)
+      } else if (!nuevaImagen && !reviewData.img) {
+        if (currentReview?.img) {
+          await deleteReviewImage(currentReview.img)
+          imageUrl = null
+        }
       }
 
       const review = await reviewsStore.updateReview(id, {

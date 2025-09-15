@@ -56,7 +56,7 @@ const props = defineProps({
     },
     maxSize: {
         type: Number,
-        default: 5 * 1024 * 1024 // 5MB por defecto
+        default: 5 * 1024 * 1024
     }
 })
 
@@ -81,8 +81,10 @@ const triggerFileInput = () => {
 }
 
 const validateFile = (file) => {
-    if (!file.type.startsWith('image/')) {
-        throw new Error('El archivo debe ser una imagen')
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+
+    if (!allowedTypes.includes(file.type)) {
+        throw new Error('Tipo de archivo no permitido. Solo se permiten: JPEG, PNG, WebP, GIF')
     }
 
     if (file.size > props.maxSize) {
@@ -118,7 +120,6 @@ const processFile = async (file) => {
         }
         reader.readAsDataURL(file)
 
-        // Emitir el archivo real para reviews
         emit('upload-start', file)
         emit('upload-complete', imagePreview.value)
         emit('update:modelValue', imagePreview.value)
@@ -137,6 +138,8 @@ const removeImage = () => {
     imagePreview.value = ''
     fileName.value = ''
     emit('update:modelValue', '')
+    emit('upload-start', null)
+    emit('upload-complete', null)
 
     if (fileInput.value) {
         fileInput.value.value = ''

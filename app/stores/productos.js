@@ -161,15 +161,15 @@ export const useProductosStore = defineStore('productos', () => {
         .from('producto_imagenes')
         .select('*')
         .order('orden')
-      
+
       if (productoIds && productoIds.length > 0) {
         query = query.in('producto_id', productoIds)
       }
-      
+
       const { data, error: err } = await query
-      
+
       if (err) throw err
-      
+
       if (productoIds && productoIds.length > 0) {
         // Reemplazar solo las imágenes de los productos especificados
         productosImagenes.value = productosImagenes.value.filter(

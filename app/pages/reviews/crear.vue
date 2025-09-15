@@ -28,8 +28,11 @@ const handleSubmit = async (formData) => {
         navigateTo(ROUTE_NAMES.REVIEWS)
     } catch (err) {
         console.error('Error creating review:', err)
-        error('Error al crear la review. Inténtalo de nuevo.', {
-            title: 'Error'
+
+        // Mostrar el error específico si está disponible
+        const errorMessage = err.message || 'Error al crear la review. Inténtalo de nuevo.'
+        error(errorMessage, {
+            title: 'Error al crear review'
         })
     }
 }

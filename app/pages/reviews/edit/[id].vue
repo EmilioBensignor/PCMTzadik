@@ -73,8 +73,11 @@ const handleSubmit = async (formData) => {
         navigateTo(ROUTE_NAMES.REVIEWS)
     } catch (err) {
         console.error('Error updating review:', err)
-        notificationError('Error al actualizar la review. Inténtalo de nuevo.', {
-            title: 'Error'
+
+        // Mostrar el error específico si está disponible
+        const errorMessage = err.message || 'Error al actualizar la review. Inténtalo de nuevo.'
+        notificationError(errorMessage, {
+            title: 'Error al actualizar review'
         })
     }
 }

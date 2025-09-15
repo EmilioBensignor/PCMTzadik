@@ -47,14 +47,23 @@ export const useProductos = () => {
 
       const producto = await productosStore.updateProducto(id, productoData)
 
-      if (imagenes.length > 0) {
-        const hasNewImages = imagenes.some(img => img.url && img.url.startsWith('data:'))
-        const currentImagenes = getImagenesByProducto(id)
-        const hasChangedImageCount = imagenes.length !== currentImagenes.length
+      const currentImagenes = getImagenesByProducto(id)
+      const hasNewImages = imagenes.some(img => img.url && img.url.startsWith('data:'))
+      const hasChangedImageCount = imagenes.length !== currentImagenes.length
+      const hasNewUploads = imagenes.some(img => img.isExisting === false || img.file !== null)
 
-        if (hasNewImages || hasChangedImageCount) {
-          await deleteAllProductoImagenes(id)
+      const hasOrderChanges = imagenes.some((img, index) => {
+        const currentImg = currentImagenes.find(curr => curr.id === img.id)
+        return currentImg && (currentImg.orden || 0) !== (index + 1)
+      })
 
+      const hasChanges = hasNewImages || hasChangedImageCount || hasNewUploads || hasOrderChanges
+
+
+      if (hasChanges) {
+        await deleteAllProductoImagenes(id)
+
+        if (imagenes.length > 0) {
           const productoConSlug = { ...producto, slug: productoData.slug || producto.slug }
           await handleImagenesUploadSeoFriendly(productoConSlug, imagenes)
         }
@@ -120,8 +129,13 @@ export const useProductos = () => {
   const handleImagenesUploadSeoFriendly = async (producto, imagenes) => {
     const { uploadProductoImagenSeoFriendly } = useStorage()
 
+
     try {
-      const uploadPromises = imagenes.map(async (imagen, index) => {
+      const results = []
+
+      for (let index = 0; index < imagenes.length; index++) {
+        const imagen = imagenes[index]
+
         let storagePath
         let filename = `${producto.slug}-${index === 0 ? 'principal' : (index + 1).toString().padStart(2, '0')}.jpg`
         let fileSize = 0
@@ -156,21 +170,29 @@ export const useProductos = () => {
           throw new Error('Formato de imagen no válido')
         }
 
-        return useSupabaseClient()
-          .from('producto_imagenes')
-          .insert({
-            producto_id: producto.id,
-            storage_path: storagePath,
-            bucket_name: 'productos-imagenes',
-            filename: filename,
-            file_size: fileSize,
-            mime_type: mimeType,
-            orden: index + 1,
-            es_principal: index === 0
-          })
-      })
+        const dbRecord = {
+          producto_id: producto.id,
+          storage_path: storagePath,
+          bucket_name: 'productos-imagenes',
+          filename: filename,
+          file_size: fileSize,
+          mime_type: mimeType,
+          orden: index + 1,
+          es_principal: index === 0
+        }
 
-      await Promise.all(uploadPromises)
+        const supabase = useSupabaseClient()
+        const result = await supabase
+          .from('producto_imagenes')
+          .insert(dbRecord)
+          .select()
+
+        if (result.error) {
+          throw result.error
+        }
+
+        results.push(result)
+      }
 
       await productosStore.fetchProductosImagenes([producto.id])
 

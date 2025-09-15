@@ -44,8 +44,11 @@ const handleSubmit = async (formData) => {
         navigateTo(ROUTE_NAMES.HOME)
     } catch (err) {
         console.error('Error creating product:', err)
-        error('Error al crear el producto. Inténtalo de nuevo.', {
-            title: 'Error'
+
+        // Mostrar el error específico si está disponible
+        const errorMessage = err.message || 'Error al crear el producto. Inténtalo de nuevo.'
+        error(errorMessage, {
+            title: 'Error al crear producto'
         })
     }
 }

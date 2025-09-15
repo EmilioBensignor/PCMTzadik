@@ -10,7 +10,7 @@
 
         <FormFieldsContainer>
             <FormReviewImageField v-model="imagePreview" id="imagen" label="Imagen" :error="errors.imagen"
-                @upload-start="handleImageStart" @upload-complete="handleImageComplete" required />
+                @upload-start="handleImageStart" @upload-complete="handleImageComplete" @upload-error="handleImageError" required />
             <FormTextField v-model="formData.rating" label="Valoración" id="rating" placeholder="Estrellas 1 al 5" 
                 required :error="errors.rating" type="number" step="0.5" min="1" max="5" />
         </FormFieldsContainer>
@@ -103,11 +103,29 @@ onMounted(() => {
 const handleImageStart = (file) => {
     imagen.value = file
     errors.imagen = ''
+
+    if (file === null) {
+        formData.img = null
+        imagePreview.value = null
+    }
 }
 
 const handleImageComplete = (imageUrl) => {
-    imagePreview.value = imageUrl
+    if (imageUrl === null) {
+        imagePreview.value = null
+        formData.img = null
+    } else {
+        imagePreview.value = imageUrl
+        if (props.isEditing && props.initialData?.img) {
+            formData.img = null
+        }
+    }
     errors.imagen = ''
+}
+
+const handleImageError = (errorMessage) => {
+    errors.imagen = errorMessage
+    console.error('Error al subir imagen:', errorMessage)
 }
 
 const validateForm = () => {
@@ -160,7 +178,7 @@ const validateForm = () => {
     if (!props.isEditing && !imagen.value) {
         errors.imagen = 'La imagen es requerida'
         isValid = false
-    } else if (props.isEditing && !imagen.value && !imagePreview.value) {
+    } else if (props.isEditing && !imagen.value && !imagePreview.value && !formData.img) {
         errors.imagen = 'La imagen es requerida'
         isValid = false
     }

@@ -18,13 +18,14 @@ export const useStorage = () => {
   const generateSeoFriendlyFileName = (originalName, productSlug, index = 1, isPrincipal = false) => {
     const extension = originalName.split('.').pop().toLowerCase()
     const suffix = isPrincipal ? 'principal' : index.toString().padStart(2, '0')
+    const timestamp = Date.now()
 
     const cleanSlug = productSlug.toLowerCase()
       .replace(/[^a-z0-9-]/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '')
 
-    return `${cleanSlug}-${suffix}.${extension}`
+    return `${cleanSlug}-${suffix}-${timestamp}.${extension}`
   }
 
   const validateImageFile = (file) => {

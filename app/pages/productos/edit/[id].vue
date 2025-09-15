@@ -96,8 +96,11 @@ const handleSubmit = async (formData) => {
         }
     } catch (err) {
         console.error('Error updating product:', err)
-        notifyError('Error al actualizar el producto. Inténtalo de nuevo.', {
-            title: 'Error'
+
+        // Mostrar el error específico si está disponible
+        const errorMessage = err.message || 'Error al actualizar el producto. Inténtalo de nuevo.'
+        notifyError(errorMessage, {
+            title: 'Error al actualizar producto'
         })
     }
 }

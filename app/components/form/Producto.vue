@@ -288,7 +288,6 @@ const toggleSubcategory = (subcategoryValue) => {
     }
 }
 
-// Handlers para MultiImageField
 const onImagesUploadStart = (files) => {
     console.log('Iniciando subida de imágenes:', files.length)
 }
@@ -399,6 +398,7 @@ const handleSubmit = async () => {
             : []
 
         productoData.videos = videoData
+
 
         emit('submit', {
             productoData,

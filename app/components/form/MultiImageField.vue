@@ -173,6 +173,8 @@ watch(images, (newImages) => {
         file_size: img.file_size || (img.file ? img.file.size : 0),
         mime_type: img.mime_type || (img.file ? img.file.type : 'image/jpeg')
     }))
+
+
     emit('update:modelValue', formattedImages)
 }, { deep: true })
 
@@ -181,8 +183,10 @@ const triggerFileInput = () => {
 }
 
 const validateFile = (file) => {
-    if (!file.type.startsWith('image/')) {
-        throw new Error('El archivo debe ser una imagen')
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+
+    if (!allowedTypes.includes(file.type)) {
+        throw new Error('Tipo de archivo no permitido. Solo se permiten: JPEG, PNG, WebP, GIF')
     }
 
     if (file.size > props.maxSize) {
@@ -268,6 +272,7 @@ const processFiles = async (files) => {
         }
 
         images.value = [...images.value, ...newImages]
+
 
         uploading.value = false
         uploadProgress.value = 100
