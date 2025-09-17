@@ -9,7 +9,7 @@
         </FormFieldsContainer>
 
         <FormFieldsContainer>
-            <FormReviewImageField v-model="imagePreview" id="imagen" label="Imagen" :error="errors.imagen"
+            <FormReviewImageField v-model="imagePreview" id="imagen" label="Imagen (310px x 160px)" :error="errors.imagen"
                 @upload-start="handleImageStart" @upload-complete="handleImageComplete" @upload-error="handleImageError" required />
             <FormTextField v-model="formData.rating" label="Valoración" id="rating" placeholder="Estrellas 1 al 5" 
                 required :error="errors.rating" type="number" step="0.5" min="1" max="5" />

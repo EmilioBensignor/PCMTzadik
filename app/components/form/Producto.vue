@@ -49,7 +49,7 @@
                 <FormMultiImageField
                     id="productos-imagenes"
                     v-model="productImages"
-                    label="Imágenes del Producto"
+                    label="Imágenes del Producto (550px x 400px)"
                     :max-files="10"
                     :max-size="5242880"
                     required
