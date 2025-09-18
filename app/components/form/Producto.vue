@@ -37,12 +37,12 @@
 
             <FormFieldsContainer>
                 <FormTextarea id="descripcion_corta" v-model="formData.descripcion_corta" label="Descripción Corta"
-                    :error="errors.descripcion_corta" placeholder="Descripción breve del producto" :rows="2" />
+                    :error="errors.descripcion_corta" placeholder="Descripción breve del producto" :rows="2" :show-formatting="true" />
             </FormFieldsContainer>
 
             <FormFieldsContainer>
                 <FormTextarea id="descripcion_larga" v-model="formData.descripcion_larga" label="Descripción Larga"
-                    :error="errors.descripcion_larga" placeholder="Descripción detallada del producto" :rows="4" />
+                    :error="errors.descripcion_larga" placeholder="Descripción detallada del producto" :rows="4" :show-formatting="true" />
             </FormFieldsContainer>
 
             <div class="w-full flex flex-col gap-4">
@@ -93,7 +93,7 @@
 
                         <FormTextarea v-else-if="field.type === 'textarea'" :id="`field-${field.id}`"
                             v-model="formData[field.id]" :label="field.label" :required="field.required"
-                            :error="errors[field.id]" :placeholder="`Ingresa ${field.label.toLowerCase()}`" :rows="4" />
+                            :error="errors[field.id]" :placeholder="`Ingresa ${field.label.toLowerCase()}`" :rows="4" :show-formatting="true" />
 
                         <FormTextField v-else-if="field.type === 'number'" :id="`field-${field.id}`"
                             v-model="formData[field.id]" :label="field.label" :required="field.required"

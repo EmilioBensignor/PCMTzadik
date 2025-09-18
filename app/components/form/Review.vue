@@ -25,7 +25,7 @@
 
         <FormFieldsContainer>
             <FormTextarea v-model="formData.comentario" label="Comentario" id="comentario"
-                placeholder="Escribe tu comentario aquí..." required :error="errors.comentario" />
+                placeholder="Escribe tu comentario aquí..." required :error="errors.comentario" :show-formatting="true" />
         </FormFieldsContainer>
 
         <div class="w-full flex flex-col lg:flex-row items-center gap-5 mt-8">
