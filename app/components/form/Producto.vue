@@ -318,7 +318,6 @@ const onImagesUploadError = (errorMessage) => {
 }
 
 const onFichaTecnicaUploadComplete = (file) => {
-    console.log('Ficha técnica procesada:', file)
     if (errors.value.ficha_tecnica) {
         delete errors.value.ficha_tecnica
     }
@@ -420,7 +419,12 @@ const handleSubmit = async () => {
                     .replace(/-+/g, '-')
                     .trim('-') || 'producto'
 
-                fichaTecnicaPath = await uploadProductoPdf(productFichaTecnica.value, tempSlug)
+                // Si estamos editando, pasar el archivo anterior para eliminarlo
+                const oldPdfPath = props.isEditing && props.productData?.ficha_tecnica
+                    ? props.productData.ficha_tecnica
+                    : null
+
+                fichaTecnicaPath = await uploadProductoPdf(productFichaTecnica.value, tempSlug, oldPdfPath)
             } catch (pdfError) {
                 errors.value.ficha_tecnica = 'Error al subir la ficha técnica'
                 console.error('Error uploading PDF:', pdfError)

@@ -276,13 +276,23 @@ export const useStorage = () => {
     }
   }
 
-  const uploadProductoPdf = async (file, productSlug) => {
+  const uploadProductoPdf = async (file, productSlug, oldPdfPath = null) => {
     try {
       uploading.value = true
       uploadProgress.value = 0
       error.value = null
 
       validatePdfFile(file)
+
+      // Si hay un archivo anterior, eliminarlo primero
+      if (oldPdfPath) {
+        try {
+          await deleteProductoPdf(oldPdfPath)
+        } catch (deleteError) {
+          console.warn('Error al eliminar PDF anterior:', deleteError)
+          // No lanzamos error aquí para no bloquear la subida del nuevo archivo
+        }
+      }
 
       const fileName = `${productSlug}-ficha-tecnica-${Date.now()}.pdf`
 
