@@ -47,20 +47,20 @@
 
         <div v-if="totalPages > 1" class="mt-8 flex justify-center">
             <nav class="flex items-center space-x-2">
-                <button @click="currentPage = currentPage - 1" :disabled="currentPage === 1"
-                    class="px-3 py-2 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50">
+                <button @click="goToPreviousPage" :disabled="currentPage === 1"
+                    class="ext-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed px-3 py-2">
                     Anterior
                 </button>
 
-                <button v-for="page in visiblePages" :key="page" @click="currentPage = page" :class="{
-                    'bg-blue-600 text-white': currentPage === page,
-                    'text-gray-700 hover:bg-gray-50': currentPage !== page
-                }" class="px-3 py-2 text-sm border rounded-md">
+                <button v-for="page in visiblePages" :key="page" @click="goToPage(page)" :class="{
+                    'bg-primary text-white': currentPage === page,
+                    'text-dark': currentPage !== page
+                }" class="text-sm border rounded-md px-3 py-2">
                     {{ page }}
                 </button>
 
-                <button @click="currentPage = currentPage + 1" :disabled="currentPage === totalPages"
-                    class="px-3 py-2 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50">
+                <button @click="goToNextPage" :disabled="currentPage === totalPages"
+                    class="text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed px-3 py-2">
                     Siguiente
                 </button>
             </nav>
@@ -84,10 +84,11 @@ const {
     currentPage,
     totalPages,
     getImagenesByProducto,
-    deleteProducto
+    deleteProducto,
+    setPage
 } = useProductos()
 
-const { getImageUrl } = useStorage()
+const { getImageUrl, getPdfUrl } = useStorage()
 
 const route = useRoute()
 const categoryName = computed(() => decodeURIComponent(route.params.nombre))
@@ -201,6 +202,25 @@ const confirmDelete = async () => {
         } catch (error) {
             console.error('Error deleting product:', error)
         }
+    }
+}
+
+const goToPage = async (page) => {
+    setPage(page)
+    await fetchProductos({ includeImages: true })
+}
+
+const goToPreviousPage = async () => {
+    if (currentPage.value > 1) {
+        setPage(currentPage.value - 1)
+        await fetchProductos({ includeImages: true })
+    }
+}
+
+const goToNextPage = async () => {
+    if (currentPage.value < totalPages.value) {
+        setPage(currentPage.value + 1)
+        await fetchProductos({ includeImages: true })
     }
 }
 

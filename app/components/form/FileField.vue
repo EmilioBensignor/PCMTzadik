@@ -47,7 +47,7 @@
 <script setup>
 const props = defineProps({
     modelValue: {
-        type: String,
+        type: [String, File],
         default: ''
     },
     label: {
@@ -100,9 +100,14 @@ const acceptAttribute = computed(() => {
 
 watch(() => props.modelValue, (newValue) => {
     if (newValue) {
-        const segments = newValue.split('/')
-        fileName.value = segments[segments.length - 1] || 'archivo'
-        fileType.value = fileName.value.split('.').pop()?.toLowerCase() || ''
+        if (newValue instanceof File) {
+            fileName.value = newValue.name
+            fileType.value = newValue.name.split('.').pop()?.toLowerCase() || ''
+        } else if (typeof newValue === 'string') {
+            const segments = newValue.split('/')
+            fileName.value = segments[segments.length - 1] || 'archivo'
+            fileType.value = fileName.value.split('.').pop()?.toLowerCase() || ''
+        }
     } else {
         fileName.value = ''
         fileType.value = ''
@@ -173,6 +178,15 @@ const simulateUpload = async (file) => {
     uploading.value = true
     uploadProgress.value = 0
 
+    if (props.acceptedTypes.includes('pdf')) {
+        uploadProgress.value = 100
+        uploading.value = false
+
+        emit('update:modelValue', file)
+        emit('upload-complete', file)
+        return
+    }
+
     const interval = setInterval(() => {
         uploadProgress.value += 10
         if (uploadProgress.value >= 100) {
@@ -194,6 +208,10 @@ const removeFile = () => {
 
     if (fileInput.value) {
         fileInput.value.value = ''
+    }
+
+    if (props.modelValue instanceof File) {
+        URL.revokeObjectURL(props.modelValue)
     }
 }
 

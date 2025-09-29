@@ -84,6 +84,19 @@
                 </div>
             </div>
 
+            <div class="w-full flex flex-col gap-4">
+                <FormFileField
+                    id="ficha-tecnica"
+                    v-model="productFichaTecnica"
+                    label="Ficha Técnica (PDF - Máximo 40MB)"
+                    :accepted-types="['pdf']"
+                    :max-size="41943040"
+                    :error="errors.ficha_tecnica"
+                    @upload-complete="onFichaTecnicaUploadComplete"
+                    @upload-error="onFichaTecnicaUploadError"
+                />
+            </div>
+
             <template v-for="(chunk, chunkIndex) in columnChunks" :key="`chunk-${chunkIndex}`">
                 <FormFieldsContainer>
                     <template v-for="field in chunk" :key="field.id">
@@ -147,7 +160,7 @@ const emit = defineEmits(['submit', 'cancel'])
 
 const { categorias, fetchCategorias, fetchSubcategorias, fetchCategoriaCampos, getCamposPorCategoria, getSubcategoriasPorCategoria, generateFormFields, validateDynamicData } = useCategorias()
 const { getImagenesByProducto } = useProductos()
-const { getImageUrl } = useStorage()
+const { getImageUrl, uploadProductoPdf } = useStorage()
 
 const selectedCategory = ref('')
 const selectedCategoryId = ref(null)
@@ -158,6 +171,7 @@ const isSubmitting = ref(false)
 const formFields = ref([])
 const productImages = ref([])
 const productVideo = ref({ titulo: '', url: '' })
+const productFichaTecnica = ref('')
 
 onMounted(async () => {
     await fetchCategorias()
@@ -276,6 +290,8 @@ const onCategoryChange = async (categoryId) => {
             descripcion_larga: '',
             descripcion_corta: ''
         }
+
+        productFichaTecnica.value = ''
     }
 }
 
@@ -299,6 +315,18 @@ const onImagesUploadComplete = (newImages) => {
 const onImagesUploadError = (errorMessage) => {
     errors.value.imagenes = errorMessage
     console.error('Error al subir imágenes:', errorMessage)
+}
+
+const onFichaTecnicaUploadComplete = (file) => {
+    console.log('Ficha técnica procesada:', file)
+    if (errors.value.ficha_tecnica) {
+        delete errors.value.ficha_tecnica
+    }
+}
+
+const onFichaTecnicaUploadError = (errorMessage) => {
+    errors.value.ficha_tecnica = errorMessage
+    console.error('Error al subir ficha técnica:', errorMessage)
 }
 
 const initializeForEdit = async () => {
@@ -354,6 +382,8 @@ const initializeForEdit = async () => {
                 url: product.videos[0].url || ''
             }
         }
+
+        productFichaTecnica.value = product.ficha_tecnica || ''
     }
 }
 
@@ -369,7 +399,6 @@ const handleSubmit = async () => {
         return
     }
 
-    // Limpiar errores de imágenes si hay imágenes válidas
     if (errors.value.imagenes) {
         delete errors.value.imagenes
     }
@@ -378,6 +407,28 @@ const handleSubmit = async () => {
 
     try {
         const { titulo, condicion, precio, moneda, oferta, destacado, descripcion_larga, descripcion_corta, ...datosDinamicos } = formData.value
+
+        let fichaTecnicaPath = null
+
+        if (productFichaTecnica.value && productFichaTecnica.value instanceof File) {
+            try {
+                const tempSlug = titulo.toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-')
+                    .trim('-') || 'producto'
+
+                fichaTecnicaPath = await uploadProductoPdf(productFichaTecnica.value, tempSlug)
+            } catch (pdfError) {
+                errors.value.ficha_tecnica = 'Error al subir la ficha técnica'
+                console.error('Error uploading PDF:', pdfError)
+                return
+            }
+        } else if (typeof productFichaTecnica.value === 'string') {
+            fichaTecnicaPath = productFichaTecnica.value
+        }
 
         const productoData = {
             categoria_id: selectedCategoryId.value,
@@ -390,7 +441,8 @@ const handleSubmit = async () => {
             destacado: destacado || false,
             descripcion_larga,
             descripcion_corta,
-            datos_dinamicos: datosDinamicos
+            datos_dinamicos: datosDinamicos,
+            ficha_tecnica: fichaTecnicaPath || null
         }
 
         const videoData = productVideo.value.url && productVideo.value.url.trim() !== ''
@@ -398,7 +450,6 @@ const handleSubmit = async () => {
             : []
 
         productoData.videos = videoData
-
 
         emit('submit', {
             productoData,

@@ -58,6 +58,21 @@ export const useStorage = () => {
     return true
   }
 
+  const validatePdfFile = (file) => {
+    const allowedTypes = ['application/pdf']
+    const maxSize = 40 * 1024 * 1024
+
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error('Tipo de archivo no permitido. Solo se permiten archivos PDF')
+    }
+
+    if (file.size > maxSize) {
+      throw new Error('El archivo es demasiado grande. Máximo 40MB')
+    }
+
+    return true
+  }
+
   const uploadProductoImagen = async (file, productoId) => {
     try {
       uploading.value = true
@@ -261,6 +276,54 @@ export const useStorage = () => {
     }
   }
 
+  const uploadProductoPdf = async (file, productSlug) => {
+    try {
+      uploading.value = true
+      uploadProgress.value = 0
+      error.value = null
+
+      validatePdfFile(file)
+
+      const fileName = `${productSlug}-ficha-tecnica-${Date.now()}.pdf`
+
+      const { data, error: uploadError } = await supabase.storage
+        .from('productos-pdfs')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        })
+
+      if (uploadError) throw uploadError
+
+      uploadProgress.value = 100
+      return data.path
+
+    } catch (err) {
+      error.value = err.message
+      console.error('Error uploading PDF:', err)
+      throw err
+    } finally {
+      uploading.value = false
+    }
+  }
+
+  const deleteProductoPdf = async (storagePath) => {
+    try {
+      error.value = null
+
+      const { error: deleteError } = await supabase.storage
+        .from('productos-pdfs')
+        .remove([storagePath])
+
+      if (deleteError) throw deleteError
+
+    } catch (err) {
+      error.value = err.message
+      console.error('Error deleting PDF:', err)
+      throw err
+    }
+  }
+
   const getImageUrl = (storagePath, cacheBust = false) => {
     if (!storagePath) return null
     let url = `${config.public.supabase.url}/storage/v1/object/public/productos-imagenes/${storagePath}`
@@ -276,6 +339,11 @@ export const useStorage = () => {
   const getVideoUrl = (storagePath) => {
     if (!storagePath) return null
     return `${config.public.supabase.url}/storage/v1/object/public/productos-videos/${storagePath}`
+  }
+
+  const getPdfUrl = (storagePath) => {
+    if (!storagePath) return null
+    return `${config.public.supabase.url}/storage/v1/object/public/productos-pdfs/${storagePath}`
   }
 
   const getImageUrlWithTransform = (storagePath, options = {}) => {
@@ -490,9 +558,11 @@ export const useStorage = () => {
     uploadProductoImagenesSeoFriendly,
     uploadProductoVideo,
     uploadProductoVideos,
+    uploadProductoPdf,
 
     deleteProductoImagen,
     deleteProductoVideo,
+    deleteProductoPdf,
 
     uploadReviewImage,
     deleteReviewImage,
@@ -500,10 +570,12 @@ export const useStorage = () => {
 
     getImageUrl,
     getVideoUrl,
+    getPdfUrl,
     getImageUrlWithTransform,
 
     validateImageFile,
     validateVideoFile,
+    validatePdfFile,
     generateUniqueFileName,
     generateSeoFriendlyFileName,
     resizeImageFile,
