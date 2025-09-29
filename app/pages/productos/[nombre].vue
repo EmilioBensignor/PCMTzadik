@@ -15,18 +15,18 @@
                 class="mt-3" />
         </div>
         <div v-if="productos.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <div v-for="producto in productos" :key="producto.id" class="bg-white rounded-lg shadow-1">
+            <div v-for="producto in productos" :key="producto.id" class="bg-white rounded-lg shadow-1 flex flex-col h-full">
                 <div class="aspect-video rounded-t-lg overflow-hidden">
                     <NuxtImg :src="getMainImage(producto)" :alt="producto.titulo" class="w-full h-full object-cover"
                         loading="lazy" @error="handleImageError" />
                 </div>
 
-                <div class="flex flex-col gap-3 p-4">
+                <div class="flex flex-col gap-3 p-4 flex-grow">
                     <p class="text-2xl font-medium">{{ producto.titulo }}</p>
                     <p class="text-xl font-bold text-dark">
                         {{ formatCurrency(producto.precio) }} {{ getCurrencyName(producto.moneda) }}
                     </p>
-                    <div class="flex justify-between">
+                    <div class="flex justify-between mt-auto">
                         <button @click.stop="editProduct(producto)"
                             class="bg-primary text-light font-medium rounded-xl py-2 px-4" title="Editar producto">
                             Editar
@@ -48,7 +48,7 @@
         <div v-if="totalPages > 1" class="mt-8 flex justify-center">
             <nav class="flex items-center space-x-2">
                 <button @click="goToPreviousPage" :disabled="currentPage === 1"
-                    class="ext-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed px-3 py-2">
+                    class="text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed px-3 py-2">
                     Anterior
                 </button>
 
