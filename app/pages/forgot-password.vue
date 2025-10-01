@@ -98,7 +98,7 @@ const handleForgotPassword = async () => {
 
     try {
         const baseUrl = import.meta.env.PROD
-            ? 'https://pcm-tzadik.vercel.app'
+            ? 'https://pcm.tzadik.com.ar'
             : 'http://localhost:3000'
 
         const redirectUrl = `${baseUrl}${ROUTE_NAMES.RESET_PASSWORD}`
