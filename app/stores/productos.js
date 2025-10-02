@@ -251,50 +251,64 @@ export const useProductosStore = defineStore('productos', () => {
     try {
       loading.value = true
       error.value = null
-      
+
       const supabase = useSupabaseClient()
-      
-      // 1. Obtener todas las imágenes del producto para borrarlas del storage
-      const imagenesDelProducto = productosImagenes.value.filter(img => img.producto_id === id)
-      
-      // 2. Borrar imágenes del storage
-      const { deleteProductoImagen } = useStorage()
-      for (const imagen of imagenesDelProducto) {
+
+      // 1. Obtener el producto para tener el slug
+      const producto = productos.value.find(p => p.id === id)
+      if (!producto) {
+        throw new Error('Producto no encontrado')
+      }
+
+      // 2. Borrar carpeta completa del storage usando el slug
+      const { deleteProductoFolder, deleteProductoPdf } = useStorage()
+
+      try {
+        if (producto.slug) {
+          const result = await deleteProductoFolder(producto.slug)
+          console.log(`Eliminados ${result.filesDeleted} archivos de la carpeta ${producto.slug}`)
+        }
+      } catch (storageError) {
+        console.warn('Error deleting folder from storage:', storageError)
+        // Continuar con el borrado aunque falle la eliminación del storage
+      }
+
+      // 3. Borrar PDF si existe
+      if (producto.ficha_tecnica) {
         try {
-          await deleteProductoImagen(imagen.storage_path)
-        } catch (storageError) {
-          console.warn(`Error deleting image ${imagen.storage_path}:`, storageError)
-          // Continuar con el borrado aunque falle una imagen
+          await deleteProductoPdf(producto.ficha_tecnica)
+        } catch (pdfError) {
+          console.warn('Error deleting PDF:', pdfError)
         }
       }
-      
-      // 3. Borrar registros de imágenes de la BD
+
+      // 4. Borrar registros de imágenes de la BD
       const { error: imagenesError } = await supabase
         .from('producto_imagenes')
         .delete()
         .eq('producto_id', id)
-      
+
       if (imagenesError) {
         console.warn('Error deleting image records:', imagenesError)
         // Continuar con el borrado del producto
       }
-      
-      // 4. Borrar el producto de la BD
+
+      // 5. Borrar el producto de la BD
       const { error: err } = await supabase
         .from('productos')
         .delete()
         .eq('id', id)
-      
+
       if (err) throw err
-      
-      // 5. Remover de arrays locales
+
+      // 6. Remover de arrays locales
       productos.value = productos.value.filter(p => p.id !== id)
       productosImagenes.value = productosImagenes.value.filter(img => img.producto_id !== id)
-      
+
       if (currentProduct.value?.id === id) {
         currentProduct.value = null
       }
-      
+
     } catch (err) {
       error.value = err.message
       console.error('Error deleting producto:', err)

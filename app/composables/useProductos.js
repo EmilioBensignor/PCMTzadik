@@ -40,53 +40,82 @@ export const useProductos = () => {
   }
 
   const updateProductoCompleto = async (id, productoData, imagenes = []) => {
-    let imagesDeleted = false
-
     try {
       if (productoData.titulo && (!productoData.slug || productoData.slug === '')) {
         productoData.slug = await generateUniqueSlug(productoData.titulo, id)
       }
 
       const producto = await productosStore.updateProducto(id, productoData)
+      const productoConSlug = { ...producto, slug: productoData.slug || producto.slug }
 
       const currentImagenes = getImagenesByProducto(id)
-      const hasNewImages = imagenes.some(img => img.url && img.url.startsWith('data:'))
-      const hasChangedImageCount = imagenes.length !== currentImagenes.length
-      const hasNewUploads = imagenes.some(img => img.isExisting === false || img.file !== null)
 
-      const hasOrderChanges = imagenes.some((img, index) => {
+      // Separar imágenes existentes de las nuevas
+      const imagenesExistentes = imagenes.filter(img => img.isExisting === true && img.id)
+      const imagenesNuevas = imagenes.filter(img => !img.isExisting || img.url?.startsWith('data:'))
+
+      // Identificar imágenes que fueron eliminadas
+      const imagenesAEliminar = currentImagenes.filter(current =>
+        !imagenesExistentes.some(img => img.id === current.id)
+      )
+
+      // Verificar si hay cambios en el orden
+      const hasOrderChanges = imagenesExistentes.some((img, index) => {
         const currentImg = currentImagenes.find(curr => curr.id === img.id)
         return currentImg && (currentImg.orden || 0) !== (index + 1)
       })
 
-      const hasChanges = hasNewImages || hasChangedImageCount || hasNewUploads || hasOrderChanges
+      const hasChanges = imagenesAEliminar.length > 0 || imagenesNuevas.length > 0 || hasOrderChanges
 
       if (hasChanges) {
-        // Primero eliminamos las imágenes antiguas
-        await deleteAllProductoImagenes(id)
-        imagesDeleted = true
+        const supabase = useSupabaseClient()
+        const { deleteProductoImagen: deleteFromStorage } = useStorage()
 
-        // Luego intentamos subir las nuevas
-        if (imagenes.length > 0) {
-          const productoConSlug = { ...producto, slug: productoData.slug || producto.slug }
-
+        // 1. Eliminar imágenes que ya no están
+        for (const imagen of imagenesAEliminar) {
           try {
-            await handleImagenesUploadSeoFriendly(productoConSlug, imagenes)
-          } catch (uploadError) {
-            // Si falla la subida de imágenes, intentamos recuperar el estado anterior
-            console.error('Error al subir nuevas imágenes:', uploadError)
+            // Eliminar del storage
+            await deleteFromStorage(imagen.storage_path)
 
-            // Si teníamos imágenes anteriores, intentamos restaurarlas
-            if (currentImagenes.length > 0) {
-              console.warn('Intentando restaurar imágenes anteriores...')
-              try {
-                await handleImagenesUploadSeoFriendly(productoConSlug, currentImagenes)
-                throw new Error(`Error al subir nuevas imágenes. Se restauraron las imágenes anteriores. Detalle: ${uploadError.message}`)
-              } catch (restoreError) {
-                throw new Error(`Error crítico: No se pudieron subir las nuevas imágenes ni restaurar las anteriores. Por favor, suba las imágenes manualmente. Detalles - Subida: ${uploadError.message}; Restauración: ${restoreError.message}`)
-              }
-            } else {
-              throw new Error(`Error al subir imágenes: ${uploadError.message}`)
+            // Eliminar de la BD
+            await supabase
+              .from('producto_imagenes')
+              .delete()
+              .eq('id', imagen.id)
+
+            console.log(`Imagen eliminada: ${imagen.storage_path}`)
+          } catch (deleteError) {
+            console.warn(`Error eliminando imagen ${imagen.storage_path}:`, deleteError)
+            // Continuar con las demás
+          }
+        }
+
+        // 2. Subir nuevas imágenes solo
+        if (imagenesNuevas.length > 0) {
+          try {
+            await handleImagenesUploadSeoFriendlyNew(productoConSlug, imagenesNuevas, imagenesExistentes.length)
+          } catch (uploadError) {
+            throw new Error(`Error al subir nuevas imágenes: ${uploadError.message}`)
+          }
+        }
+
+        // 3. Actualizar orden de imágenes existentes si cambió
+        if (hasOrderChanges) {
+          for (let index = 0; index < imagenesExistentes.length; index++) {
+            const imagen = imagenesExistentes[index]
+            const newOrden = index + 1
+            const isPrincipal = index === 0
+
+            try {
+              await supabase
+                .from('producto_imagenes')
+                .update({
+                  orden: newOrden,
+                  es_principal: isPrincipal
+                })
+                .eq('id', imagen.id)
+            } catch (updateError) {
+              console.warn(`Error actualizando orden de imagen ${imagen.id}:`, updateError)
             }
           }
         }
@@ -97,13 +126,7 @@ export const useProductos = () => {
       return producto
     } catch (error) {
       console.error('Error updating producto completo:', error)
-
-      // Propagar el error con contexto adicional
-      if (error.message.includes('Error crítico') || error.message.includes('Error al subir')) {
-        throw error
-      }
-
-      throw new Error(`Error al actualizar producto: ${error.message}`)
+      throw error
     }
   }
 
@@ -247,6 +270,114 @@ export const useProductos = () => {
 
     } catch (error) {
       console.error('Error uploading imagenes SEO-friendly:', error)
+      throw error
+    }
+  }
+
+  const handleImagenesUploadSeoFriendlyNew = async (producto, imagenesNuevas, offsetIndex = 0) => {
+    const { uploadProductoImagenSeoFriendly } = useStorage()
+
+    const uploadErrors = []
+    const successfulUploads = []
+    const uploadedPaths = [] // Para rollback en caso de error
+
+    try {
+      const supabase = useSupabaseClient()
+
+      for (let i = 0; i < imagenesNuevas.length; i++) {
+        const imagen = imagenesNuevas[i]
+        const globalIndex = offsetIndex + i
+
+        try {
+          // Validar que la imagen tenga datos válidos
+          if (!imagen.url || !imagen.url.startsWith('data:')) {
+            throw new Error('Imagen sin datos válidos para subir')
+          }
+
+          const filename = `${producto.slug}-${globalIndex === 0 ? 'principal' : (globalIndex + 1).toString().padStart(2, '0')}.jpg`
+
+          const response = await fetch(imagen.url)
+          const blob = await response.blob()
+
+          // Validar que el blob sea válido
+          if (!blob || blob.size === 0) {
+            throw new Error('Imagen corrupta o vacía')
+          }
+
+          const file = new File([blob], filename, { type: blob.type })
+
+          // Intentar subir al storage
+          const storagePath = await uploadProductoImagenSeoFriendly(
+            file,
+            producto.slug,
+            globalIndex + 1,
+            globalIndex === 0
+          )
+
+          // Si la subida fue exitosa, guardar en BD
+          const dbRecord = {
+            producto_id: producto.id,
+            storage_path: storagePath,
+            bucket_name: 'productos-imagenes',
+            filename: file.name,
+            file_size: file.size,
+            mime_type: file.type,
+            orden: globalIndex + 1,
+            es_principal: globalIndex === 0
+          }
+
+          const result = await supabase
+            .from('producto_imagenes')
+            .insert(dbRecord)
+            .select()
+
+          if (result.error) {
+            // Si falla la BD, eliminar del storage
+            const { deleteProductoImagen } = useStorage()
+            try {
+              await deleteProductoImagen(storagePath)
+            } catch (cleanupError) {
+              console.warn('Error limpiando archivo huérfano:', cleanupError)
+            }
+            throw result.error
+          }
+
+          successfulUploads.push(file.name)
+          uploadedPaths.push(storagePath)
+
+        } catch (imageError) {
+          const errorMsg = `Imagen ${i + 1} (${imagen.name || 'sin nombre'}): ${imageError.message}`
+          console.error(errorMsg, imageError)
+          uploadErrors.push(errorMsg)
+
+          // Si falla una imagen, hacer rollback de las subidas exitosas
+          if (uploadedPaths.length > 0) {
+            console.warn('Iniciando rollback de imágenes subidas...')
+            const { deleteProductoImagen } = useStorage()
+
+            for (const path of uploadedPaths) {
+              try {
+                await deleteProductoImagen(path)
+                await supabase
+                  .from('producto_imagenes')
+                  .delete()
+                  .eq('storage_path', path)
+              } catch (rollbackError) {
+                console.error('Error en rollback:', rollbackError)
+              }
+            }
+          }
+
+          throw new Error(errorMsg)
+        }
+      }
+
+      await productosStore.fetchProductosImagenes([producto.id])
+
+      return successfulUploads
+
+    } catch (error) {
+      console.error('Error uploading nuevas imagenes:', error)
       throw error
     }
   }

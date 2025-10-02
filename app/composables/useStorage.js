@@ -296,6 +296,37 @@ export const useStorage = () => {
     }
   }
 
+  const deleteProductoFolder = async (folderPath) => {
+    try {
+      error.value = null
+
+      // Listar todos los archivos en la carpeta
+      const { data: files, error: listError } = await supabase.storage
+        .from('productos-imagenes')
+        .list(folderPath)
+
+      if (listError) throw listError
+
+      // Si hay archivos, eliminarlos todos
+      if (files && files.length > 0) {
+        const filePaths = files.map(file => `${folderPath}/${file.name}`)
+
+        const { error: deleteError } = await supabase.storage
+          .from('productos-imagenes')
+          .remove(filePaths)
+
+        if (deleteError) throw deleteError
+      }
+
+      return { success: true, filesDeleted: files?.length || 0 }
+
+    } catch (err) {
+      error.value = err.message
+      console.error('Error deleting folder:', err)
+      throw err
+    }
+  }
+
   const deleteProductoVideo = async (storagePath) => {
     try {
       error.value = null
@@ -608,6 +639,7 @@ export const useStorage = () => {
     uploadProductoPdf,
 
     deleteProductoImagen,
+    deleteProductoFolder,
     deleteProductoVideo,
     deleteProductoPdf,
 
