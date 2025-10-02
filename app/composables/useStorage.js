@@ -105,36 +105,73 @@ export const useStorage = () => {
     }
   }
 
-  const uploadProductoImagenSeoFriendly = async (file, productSlug, index = 1, isPrincipal = false) => {
-    try {
-      uploading.value = true
-      uploadProgress.value = 0
-      error.value = null
+  const uploadProductoImagenSeoFriendly = async (file, productSlug, index = 1, isPrincipal = false, retries = 3) => {
+    let lastError = null
 
-      validateImageFile(file)
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        uploading.value = true
+        uploadProgress.value = 0
+        error.value = null
 
-      const fileName = generateSeoFriendlyFileName(file.name, productSlug, index, isPrincipal)
-      const filePath = `${productSlug}/${fileName}`
+        validateImageFile(file)
 
-      const { data, error: uploadError } = await supabase.storage
-        .from('productos-imagenes')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true
-        })
+        const fileName = generateSeoFriendlyFileName(file.name, productSlug, index, isPrincipal)
+        const filePath = `${productSlug}/${fileName}`
 
-      if (uploadError) throw uploadError
+        const { data, error: uploadError } = await supabase.storage
+          .from('productos-imagenes')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: true
+          })
 
-      uploadProgress.value = 100
-      return data.path
+        if (uploadError) {
+          lastError = uploadError
 
-    } catch (err) {
-      error.value = err.message
-      console.error('Error uploading imagen SEO-friendly:', err)
-      throw err
-    } finally {
-      uploading.value = false
+          // Si es un error de archivo existente y no es el último intento, reintentamos con nuevo nombre
+          if (uploadError.message && uploadError.message.includes('already exists') && attempt < retries - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)))
+            continue
+          }
+
+          throw uploadError
+        }
+
+        uploadProgress.value = 100
+        return data.path
+
+      } catch (err) {
+        lastError = err
+
+        // Si no es el último intento y el error es temporal, reintentamos
+        if (attempt < retries - 1) {
+          const isTemporaryError = err.message && (
+            err.message.includes('network') ||
+            err.message.includes('timeout') ||
+            err.message.includes('fetch')
+          )
+
+          if (isTemporaryError) {
+            console.warn(`Reintento ${attempt + 1}/${retries} para ${file.name}`)
+            await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)))
+            continue
+          }
+        }
+
+        // Si llegamos aquí y no es el último intento, es un error no recuperable
+        if (attempt === retries - 1) {
+          error.value = lastError.message
+          console.error('Error uploading imagen SEO-friendly:', lastError)
+          throw new Error(`Error subiendo ${file.name}: ${lastError.message}`)
+        }
+      } finally {
+        uploading.value = false
+      }
     }
+
+    // Si llegamos aquí, algo salió muy mal
+    throw new Error(`Error subiendo ${file.name} después de ${retries} intentos: ${lastError?.message || 'Error desconocido'}`)
   }
 
   const uploadProductoImagenes = async (files, productoId) => {

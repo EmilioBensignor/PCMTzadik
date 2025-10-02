@@ -236,11 +236,21 @@ const processFiles = async (files) => {
         emit('upload-start', files)
 
         const newImages = []
+        const errors = []
+
+        // Crear un set con los nombres de archivos existentes para detectar duplicados
+        const existingFileNames = new Set(images.value.map(img => img.name))
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i]
 
             try {
+                // Validar que no sea duplicado
+                if (existingFileNames.has(file.name)) {
+                    errors.push(`${file.name}: Ya existe una imagen con este nombre`)
+                    continue
+                }
+
                 validateFile(file)
 
                 const imageData = await new Promise((resolve) => {
@@ -262,24 +272,31 @@ const processFiles = async (files) => {
                 })
 
                 newImages.push(imageData)
+                existingFileNames.add(file.name)
 
                 uploadProgress.value = ((i + 1) / files.length) * 100
 
             } catch (error) {
                 console.error(`Error procesando ${file.name}:`, error)
-                emit('upload-error', `${file.name}: ${error.message}`)
+                errors.push(`${file.name}: ${error.message}`)
             }
         }
 
-        images.value = [...images.value, ...newImages]
-
+        if (newImages.length > 0) {
+            images.value = [...images.value, ...newImages]
+            emit('upload-complete', newImages)
+        }
 
         uploading.value = false
         uploadProgress.value = 100
 
-        emit('upload-complete', newImages)
-
-        if (showError.value) {
+        // Mostrar errores si los hubo
+        if (errors.length > 0) {
+            const errorMessage = errors.length === 1
+                ? errors[0]
+                : `${errors.length} archivos con errores: ${errors.slice(0, 3).join(', ')}${errors.length > 3 ? '...' : ''}`
+            emit('upload-error', errorMessage)
+        } else if (showError.value) {
             showError.value = false
         }
 

@@ -40,6 +40,8 @@ export const useProductos = () => {
   }
 
   const updateProductoCompleto = async (id, productoData, imagenes = []) => {
+    let imagesDeleted = false
+
     try {
       if (productoData.titulo && (!productoData.slug || productoData.slug === '')) {
         productoData.slug = await generateUniqueSlug(productoData.titulo, id)
@@ -59,13 +61,34 @@ export const useProductos = () => {
 
       const hasChanges = hasNewImages || hasChangedImageCount || hasNewUploads || hasOrderChanges
 
-
       if (hasChanges) {
+        // Primero eliminamos las imágenes antiguas
         await deleteAllProductoImagenes(id)
+        imagesDeleted = true
 
+        // Luego intentamos subir las nuevas
         if (imagenes.length > 0) {
           const productoConSlug = { ...producto, slug: productoData.slug || producto.slug }
-          await handleImagenesUploadSeoFriendly(productoConSlug, imagenes)
+
+          try {
+            await handleImagenesUploadSeoFriendly(productoConSlug, imagenes)
+          } catch (uploadError) {
+            // Si falla la subida de imágenes, intentamos recuperar el estado anterior
+            console.error('Error al subir nuevas imágenes:', uploadError)
+
+            // Si teníamos imágenes anteriores, intentamos restaurarlas
+            if (currentImagenes.length > 0) {
+              console.warn('Intentando restaurar imágenes anteriores...')
+              try {
+                await handleImagenesUploadSeoFriendly(productoConSlug, currentImagenes)
+                throw new Error(`Error al subir nuevas imágenes. Se restauraron las imágenes anteriores. Detalle: ${uploadError.message}`)
+              } catch (restoreError) {
+                throw new Error(`Error crítico: No se pudieron subir las nuevas imágenes ni restaurar las anteriores. Por favor, suba las imágenes manualmente. Detalles - Subida: ${uploadError.message}; Restauración: ${restoreError.message}`)
+              }
+            } else {
+              throw new Error(`Error al subir imágenes: ${uploadError.message}`)
+            }
+          }
         }
       }
 
@@ -74,7 +97,13 @@ export const useProductos = () => {
       return producto
     } catch (error) {
       console.error('Error updating producto completo:', error)
-      throw error
+
+      // Propagar el error con contexto adicional
+      if (error.message.includes('Error crítico') || error.message.includes('Error al subir')) {
+        throw error
+      }
+
+      throw new Error(`Error al actualizar producto: ${error.message}`)
     }
   }
 
@@ -129,6 +158,8 @@ export const useProductos = () => {
   const handleImagenesUploadSeoFriendly = async (producto, imagenes) => {
     const { uploadProductoImagenSeoFriendly } = useStorage()
 
+    const uploadErrors = []
+    const successfulUploads = []
 
     try {
       const results = []
@@ -136,65 +167,83 @@ export const useProductos = () => {
       for (let index = 0; index < imagenes.length; index++) {
         const imagen = imagenes[index]
 
-        let storagePath
-        let filename = `${producto.slug}-${index === 0 ? 'principal' : (index + 1).toString().padStart(2, '0')}.jpg`
-        let fileSize = 0
-        let mimeType = 'image/jpeg'
+        try {
+          let storagePath
+          let filename = `${producto.slug}-${index === 0 ? 'principal' : (index + 1).toString().padStart(2, '0')}.jpg`
+          let fileSize = 0
+          let mimeType = 'image/jpeg'
 
-        if (imagen.url && imagen.url.startsWith('data:')) {
-          const response = await fetch(imagen.url)
-          const blob = await response.blob()
-          const file = new File([blob], filename, { type: blob.type })
+          if (imagen.url && imagen.url.startsWith('data:')) {
+            const response = await fetch(imagen.url)
+            const blob = await response.blob()
+            const file = new File([blob], filename, { type: blob.type })
 
-          storagePath = await uploadProductoImagenSeoFriendly(
-            file,
-            producto.slug,
-            index + 1,
-            index === 0
-          )
-          filename = file.name
-          fileSize = file.size
-          mimeType = file.type
-        } else if (imagen.url) {
-          if (imagen.url.includes('/productos-imagenes/')) {
-            const urlParts = imagen.url.split('/productos-imagenes/')
-            storagePath = urlParts[1]
+            storagePath = await uploadProductoImagenSeoFriendly(
+              file,
+              producto.slug,
+              index + 1,
+              index === 0
+            )
+            filename = file.name
+            fileSize = file.size
+            mimeType = file.type
+          } else if (imagen.url) {
+            if (imagen.url.includes('/productos-imagenes/')) {
+              const urlParts = imagen.url.split('/productos-imagenes/')
+              storagePath = urlParts[1]
+            } else {
+              storagePath = imagen.url
+            }
+
+            filename = imagen.filename || filename
+            fileSize = imagen.file_size || 0
+            mimeType = imagen.mime_type || 'image/jpeg'
           } else {
-            storagePath = imagen.url
+            throw new Error('Formato de imagen no válido')
           }
 
-          filename = imagen.filename || filename
-          fileSize = imagen.file_size || 0
-          mimeType = imagen.mime_type || 'image/jpeg'
-        } else {
-          throw new Error('Formato de imagen no válido')
+          const dbRecord = {
+            producto_id: producto.id,
+            storage_path: storagePath,
+            bucket_name: 'productos-imagenes',
+            filename: filename,
+            file_size: fileSize,
+            mime_type: mimeType,
+            orden: index + 1,
+            es_principal: index === 0
+          }
+
+          const supabase = useSupabaseClient()
+          const result = await supabase
+            .from('producto_imagenes')
+            .insert(dbRecord)
+            .select()
+
+          if (result.error) {
+            throw result.error
+          }
+
+          results.push(result)
+          successfulUploads.push(filename)
+
+        } catch (imageError) {
+          const errorMsg = `Imagen ${index + 1} (${imagen.name || imagen.filename || 'sin nombre'}): ${imageError.message}`
+          console.error(errorMsg, imageError)
+          uploadErrors.push(errorMsg)
+          // Continuamos con la siguiente imagen en lugar de abortar todo
         }
-
-        const dbRecord = {
-          producto_id: producto.id,
-          storage_path: storagePath,
-          bucket_name: 'productos-imagenes',
-          filename: filename,
-          file_size: fileSize,
-          mime_type: mimeType,
-          orden: index + 1,
-          es_principal: index === 0
-        }
-
-        const supabase = useSupabaseClient()
-        const result = await supabase
-          .from('producto_imagenes')
-          .insert(dbRecord)
-          .select()
-
-        if (result.error) {
-          throw result.error
-        }
-
-        results.push(result)
       }
 
       await productosStore.fetchProductosImagenes([producto.id])
+
+      // Si hubo errores, los lanzamos pero después de haber subido las exitosas
+      if (uploadErrors.length > 0) {
+        const errorSummary = uploadErrors.length === imagenes.length
+          ? 'No se pudo subir ninguna imagen'
+          : `Se subieron ${successfulUploads.length} de ${imagenes.length} imágenes. Errores: ${uploadErrors.join('; ')}`
+
+        throw new Error(errorSummary)
+      }
 
     } catch (error) {
       console.error('Error uploading imagenes SEO-friendly:', error)
