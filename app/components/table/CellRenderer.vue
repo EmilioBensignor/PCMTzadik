@@ -1,9 +1,18 @@
 <template>
     <div v-if="column.type === 'image'" class="flex items-center justify-center">
-        <img :src="value" :alt="column.label" class="w-16 h-16 object-cover rounded-lg" />
+        <img :src="getImageUrl(value)" :alt="column.label" class="w-16 h-16 object-contain rounded-lg" />
     </div>
-    <div v-else-if="(column.type === 'text' || column.type === 'textarea') && column.key !== 'subgrupos'"
-        class="w-full max-w-[18.75rem] break-words">
+    <div v-else-if="column.type === 'color'" class="flex items-center justify-center gap-2">
+        <div
+            :style="{ backgroundColor: value }"
+            class="w-8 h-8 rounded-full border-2 border-gray-300 shadow-sm"
+            :title="value"
+        ></div>
+        <span class="text-sm">{{ value }}</span>
+    </div>
+    <div v-else-if="(column.type === 'text' || column.type === 'textarea')"
+        class="w-full max-h-32 overflow-y-auto whitespace-pre-wrap break-words"
+        style="max-height: 8rem;">
         <span>{{ value || '-' }}</span>
     </div>
     <span v-else>{{ formatValue(value, column) }}</span>
@@ -24,6 +33,12 @@ const props = defineProps({
         default: () => ({})
     }
 })
+
+const getImageUrl = (url) => {
+    if (!url) return ''
+    const separator = url.includes('?') ? '&' : '?'
+    return `${url}${separator}t=${Date.now()}`
+}
 
 const formatValue = (value, column) => {
     if (value === null || value === undefined) return '-'
@@ -83,7 +98,7 @@ const formatValue = (value, column) => {
             return new Intl.NumberFormat('es-AR').format(value)
 
         case 'boolean':
-            return value ? 'Sí' : 'No'
+            return value ? 'Habilitado' : 'Deshabilitado'
 
         case 'image':
             return value

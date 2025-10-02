@@ -24,8 +24,16 @@
 
             <FormFieldsContainer>
                 <FormTextField id="precio" v-model="formData.precio" label="Precio" required :error="errors.precio"
-                    type="number" step="0.01" placeholder="Ingresa el precio" />
-                <FormSwitch id="moneda" v-model="formData.moneda" label="Moneda" 
+                    type="number" step="0.01" placeholder="Ingresa el precio" @input="calcularPrecioConDescuento" />
+                <FormTextField id="descuento" v-model.number="formData.descuento" label="Descuento (%)"
+                    :error="errors.descuento" type="number" min="0" max="100" step="1"
+                    placeholder="0" @input="calcularPrecioConDescuento" />
+            </FormFieldsContainer>
+
+            <FormFieldsContainer>
+                <FormTextField id="precio_descuento" :model-value="precioConDescuento" label="Precio con Descuento"
+                    type="number" step="0.01" placeholder="0.00" disabled class="bg-gray-100" />
+                <FormSwitch id="moneda" v-model="formData.moneda" label="Moneda"
                     left-label="Pesos" right-label="USD" required />
             </FormFieldsContainer>
 
@@ -284,6 +292,7 @@ const onCategoryChange = async (categoryId) => {
             titulo: '',
             condicion: '',
             precio: '',
+            descuento: 0,
             moneda: true,
             oferta: '',
             destacado: false,
@@ -347,6 +356,7 @@ const initializeForEdit = async () => {
             titulo: product.titulo || '',
             condicion: product.condicion || '',
             precio: product.precio || '',
+            descuento: product.descuento || 0,
             moneda: product.moneda !== undefined ? product.moneda : true,
             oferta: product.oferta || '',
             destacado: product.destacado || false,
@@ -386,6 +396,17 @@ const initializeForEdit = async () => {
     }
 }
 
+const precioConDescuento = computed(() => {
+    if (!formData.value.precio) return 0
+    if (!formData.value.descuento || formData.value.descuento <= 0) return formData.value.precio
+
+    return Math.round(formData.value.precio * (1 - formData.value.descuento / 100) * 100) / 100
+})
+
+const calcularPrecioConDescuento = () => {
+    // Trigger reactivity
+}
+
 const handleSubmit = async () => {
     const validation = validateDynamicData(selectedCategoryId.value, formData.value)
     if (!validation.isValid) {
@@ -405,7 +426,7 @@ const handleSubmit = async () => {
     isSubmitting.value = true
 
     try {
-        const { titulo, condicion, precio, moneda, oferta, destacado, descripcion_larga, descripcion_corta, ...datosDinamicos } = formData.value
+        const { titulo, condicion, precio, descuento, moneda, oferta, destacado, descripcion_larga, descripcion_corta, ...datosDinamicos } = formData.value
 
         let fichaTecnicaPath = null
 
@@ -440,6 +461,8 @@ const handleSubmit = async () => {
             titulo,
             condicion,
             precio: parseFloat(precio) || 0,
+            descuento: parseFloat(descuento) || 0,
+            precio_descuento: precioConDescuento.value || parseFloat(precio) || 0,
             moneda: moneda !== undefined ? moneda : true,
             oferta: oferta || null,
             destacado: destacado || false,

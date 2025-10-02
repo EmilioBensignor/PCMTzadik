@@ -1,9 +1,16 @@
 <template>
     <DefaultSection>
-        <HeadingH1>Productos</HeadingH1>
-        <ButtonPrimary :to="ROUTE_NAMES.PRODUCTOS_CREAR">
-            Nuevo Producto
-        </ButtonPrimary>
+        <div class="w-full flex flex-col items-center gap-6">
+            <HeadingH1>Productos</HeadingH1>
+            <div class="w-full lg:max-w-3xl flex flex-col lg:flex-row justify-center items-center gap-6">
+                <ButtonPrimary :to="ROUTE_NAMES.PRODUCTOS_CREAR">
+                    Nuevo Producto
+                </ButtonPrimary>
+                <ButtonPrimary :to="ROUTE_NAMES.EDITOR_MASIVO" class="!bg-terciary hover:!bg-terciary-dark">
+                    Editor Masivo
+                </ButtonPrimary>
+            </div>
+        </div>
         <div v-if="loading || loadingData" class="flex justify-center items-center py-12">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>

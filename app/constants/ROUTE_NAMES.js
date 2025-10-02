@@ -11,6 +11,7 @@ export const ROUTE_NAMES = {
     PRODUCTOS_CREAR: '/productos/crear',
     PRODUCTOS_EDITAR: (id) => `/productos/edit/${id}`,
     PRODUCTOS_CATEGORIA: (nombre) => `/productos/${encodeURIComponent(nombre)}`,
+    EDITOR_MASIVO: '/editor-masivo',
     // Reviews
     REVIEWS: '/reviews',
     REVIEWS_CREAR: '/reviews/crear',

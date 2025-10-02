@@ -1,5 +1,5 @@
 <template>
-    <div class="w-full max-w-screen overflow-auto">
+    <div class="w-full max-w-[100vw] overflow-auto">
         <table class="w-full mx-auto">
             <thead>
                 <tr>
@@ -17,21 +17,24 @@
                 <tr v-for="(item, index) in data" :key="getRowKey(item, index)"
                     class="odd:bg-gray-light even:bg-gray-mid border-b border-gray-dark last:border-none">
                     <td v-for="column in columns" :key="column.key"
-                        class="border-r border-gray-dark text-dark font-light p-3">
-                        <slot :name="`cell-${column.key}`" :item="item" :value="getNestedValue(item, column.key)"
-                            :column="column" :index="index">
-                            <TableCellRenderer :value="getNestedValue(item, column.key)" :column="column"
-                                :related-data="relatedData" />
-                        </slot>
+                        class="border-r border-gray-dark text-dark font-light p-3 text-center"
+                        style="max-height: 8rem; height: auto; vertical-align: middle;">
+                        <div class="max-h-32 overflow-y-auto flex items-center justify-center" style="max-height: 8rem;">
+                            <slot :name="`cell-${column.key}`" :item="item" :value="getNestedValue(item, column.key)"
+                                :column="column" :index="index">
+                                <TableCellRenderer :value="getNestedValue(item, column.key)" :column="column"
+                                    :related-data="relatedData" />
+                            </slot>
+                        </div>
                     </td>
 
-                    <td v-if="showActions" class="text-dark font-light whitespace-nowrap p-3">
+                    <td v-if="showActions" class="font-light whitespace-nowrap p-3">
                         <slot name="row-actions" :item="item" :index="index">
                             <div class="flex justify-center items-center gap-2">
                                 <button type="button" @click.prevent.stop="$emit('edit', item, index)" title="Editar">
-                                    <Icon name="tabler:edit" class="w-6 h-6 text-violet" />
+                                    <Icon name="tabler:edit" class="w-6 h-6 text-terciary" />
                                 </button>
-                                <button type="button" @click.prevent.stop="openDeleteModal(item, index)"
+                                <button v-if="showDelete" type="button" @click.prevent.stop="openDeleteModal(item, index)"
                                     title="Eliminar">
                                     <Icon name="tabler:trash" class="w-6 h-6 text-primary" />
                                 </button>
@@ -72,6 +75,10 @@ const props = defineProps({
         type: Boolean,
         default: true
     },
+    showDelete: {
+        type: Boolean,
+        default: true
+    },
     emptyStateText: {
         type: String,
         default: 'No hay datos disponibles'
@@ -107,9 +114,10 @@ const getRowKey = (item, index) => {
 const openDeleteModal = (item, index) => {
     let itemName = 'este elemento'
 
-    if (item.nombre) itemName = item.nombre
-    else if (item.descripcion) itemName = item.descripcion
+    if (item.nombreComercio) itemName = item.nombreComercio
+    else if (item.nombre) itemName = item.nombre
     else if (item.titulo) itemName = item.titulo
+    else if (item.descripcion) itemName = item.descripcion
     else if (item.name) itemName = item.name
     else if (item.h1) itemName = item.h1
     else if (item.nombreprod) itemName = item.nombreprod

@@ -20,7 +20,7 @@
                     class="text-dark font-light underline">
                     registrate</NuxtLink>
             </p>
-            <FormError v-if="errorMsg">
+            <FormError v-if="errorMsg" class="justify-center">
                 {{ errorMsg }}
             </FormError>
 
