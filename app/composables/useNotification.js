@@ -1,6 +1,5 @@
 import { ref, readonly } from 'vue'
 
-// Global state - shared across all instances
 const notifications = ref([])
 
 export const useNotification = () => {

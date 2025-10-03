@@ -238,14 +238,12 @@ const processFiles = async (files) => {
         const newImages = []
         const errors = []
 
-        // Crear un set con los nombres de archivos existentes para detectar duplicados
         const existingFileNames = new Set(images.value.map(img => img.name))
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i]
 
             try {
-                // Validar que no sea duplicado
                 if (existingFileNames.has(file.name)) {
                     errors.push(`${file.name}: Ya existe una imagen con este nombre`)
                     continue
@@ -290,7 +288,6 @@ const processFiles = async (files) => {
         uploading.value = false
         uploadProgress.value = 100
 
-        // Mostrar errores si los hubo
         if (errors.length > 0) {
             const errorMessage = errors.length === 1
                 ? errors[0]

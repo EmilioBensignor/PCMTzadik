@@ -35,9 +35,7 @@ const props = defineProps({
 
 defineEmits(['delete'])
 
-// Generate a stable cache bust value based on review ID and update time
 const cacheBustValue = computed(() => {
-    // Use review ID and a timestamp to create a stable cache bust value
     const reviewId = props.review.id || 'no-id'
     const updated = props.review.updated_at || props.review.created_at || Date.now()
     return `${reviewId}-${new Date(updated).getTime()}`
@@ -46,8 +44,7 @@ const cacheBustValue = computed(() => {
 const imageUrl = computed(() => {
     if (!props.review.img) return null
     
-    // Agregar cache busting basado en el review
-    const baseUrl = props.review.img.split('?')[0] // Remover query params existentes
+    const baseUrl = props.review.img.split('?')[0]
     
     return `${baseUrl}?v=${cacheBustValue.value}`
 })

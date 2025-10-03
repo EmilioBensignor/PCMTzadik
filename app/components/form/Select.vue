@@ -109,7 +109,6 @@ const selectOption = (option) => {
     }
 }
 
-// Cerrar dropdown al hacer click fuera
 const closeDropdown = (event) => {
     if (!event.target.closest('.relative')) {
         isOpen.value = false

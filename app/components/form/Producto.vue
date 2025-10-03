@@ -24,7 +24,7 @@
 
             <FormFieldsContainer>
                 <FormTextField id="precio" v-model="formData.precio" label="Precio" required :error="errors.precio"
-                    type="number" step="0.01" placeholder="Ingresa el precio" @input="calcularPrecioConDescuento" />
+                    type="number" step="1" min="0" placeholder="Ingresa el precio" @input="calcularPrecioConDescuento" />
                 <FormTextField id="descuento" v-model.number="formData.descuento" label="Descuento (%)"
                     :error="errors.descuento" type="number" min="0" max="100" step="1"
                     placeholder="0" @input="calcularPrecioConDescuento" />
@@ -32,7 +32,7 @@
 
             <FormFieldsContainer>
                 <FormTextField id="precio_descuento" :model-value="precioConDescuento" label="Precio con Descuento"
-                    type="number" step="0.01" placeholder="0.00" disabled class="bg-gray-100" />
+                    type="number" step="1" placeholder="0" disabled class="bg-gray-100" />
                 <FormSwitch id="moneda" v-model="formData.moneda" label="Moneda"
                     left-label="Pesos" right-label="USD" required />
             </FormFieldsContainer>
@@ -251,8 +251,9 @@ const isValidYouTubeUrl = (url) => {
     const youtubeEmbedRegex = /^https:\/\/www\.youtube\.com\/embed\/[a-zA-Z0-9_-]+(\?.*)?$/
     const youtubeWatchRegex = /^https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)(&.*)?$/
     const youtubeShortRegex = /^https:\/\/youtu\.be\/([a-zA-Z0-9_-]+)(\?.*)?$/
+    const youtubeShortsRegex = /^https:\/\/www\.youtube\.com\/shorts\/([a-zA-Z0-9_-]+)(\?.*)?$/
 
-    return youtubeEmbedRegex.test(url) || youtubeWatchRegex.test(url) || youtubeShortRegex.test(url)
+    return youtubeEmbedRegex.test(url) || youtubeWatchRegex.test(url) || youtubeShortRegex.test(url) || youtubeShortsRegex.test(url)
 }
 
 const sanitizeYouTubeUrl = (url) => {
@@ -270,6 +271,11 @@ const sanitizeYouTubeUrl = (url) => {
     const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/)
     if (shortMatch) {
         return `https://www.youtube.com/embed/${shortMatch[1]}`
+    }
+
+    const shortsMatch = url.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/)
+    if (shortsMatch) {
+        return `https://www.youtube.com/embed/${shortsMatch[1]}`
     }
 
     return url
@@ -397,10 +403,13 @@ const initializeForEdit = async () => {
 }
 
 const precioConDescuento = computed(() => {
-    if (!formData.value.precio) return 0
-    if (!formData.value.descuento || formData.value.descuento <= 0) return formData.value.precio
+    const precio = parseFloat(formData.value.precio) || 0
+    if (!precio) return 0
 
-    return Math.round(formData.value.precio * (1 - formData.value.descuento / 100) * 100) / 100
+    const descuento = parseFloat(formData.value.descuento) || 0
+    if (descuento <= 0) return precio
+
+    return Math.round(precio * (1 - descuento / 100))
 })
 
 const calcularPrecioConDescuento = () => {
@@ -440,7 +449,6 @@ const handleSubmit = async () => {
                     .replace(/-+/g, '-')
                     .trim('-') || 'producto'
 
-                // Si estamos editando, pasar el archivo anterior para eliminarlo
                 const oldPdfPath = props.isEditing && props.productData?.ficha_tecnica
                     ? props.productData.ficha_tecnica
                     : null

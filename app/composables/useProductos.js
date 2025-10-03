@@ -640,6 +640,7 @@ export const useProductos = () => {
     setPage: productosStore.setPage,
 
     fetchProductos: productosStore.fetchProductos,
+    fetchAllProductos: productosStore.fetchAllProductos,
     fetchProductoById: productosStore.fetchProductoById,
     getFeaturedProductos,
     getRelatedProductos,

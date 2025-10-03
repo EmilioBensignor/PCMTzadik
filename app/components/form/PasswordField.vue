@@ -54,13 +54,11 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'blur', 'focus', 'toggle-visibility'])
 
-// Estado interno
 const showPassword = ref(props.initiallyVisible)
 const showError = ref(false)
 
 const inputId = computed(() => props.id)
 
-// Funciones
 const togglePasswordVisibility = () => {
     if (!props.disabled) {
         showPassword.value = !showPassword.value

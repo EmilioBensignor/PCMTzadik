@@ -53,7 +53,7 @@
 <script setup>
 import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 const { categorias, fetchCategorias } = useCategorias()
-const { productos, loading, fetchProductos } = useProductos()
+const { productos, loading, fetchAllProductos } = useProductos()
 const { success, error } = useNotification()
 
 const searchQuery = ref('')
@@ -82,7 +82,7 @@ const columns = [
 
 onMounted(async () => {
     await fetchCategorias()
-    await fetchProductos({ includeImages: false })
+    await fetchAllProductos({ includeImages: false })
 
     productos.value.forEach(producto => {
         productosOriginales.value.set(producto.id, {
@@ -125,10 +125,13 @@ const marcarModificado = (producto) => {
 }
 
 const calcularPrecioFinal = (producto) => {
-    if (!producto.precio) return 0
-    if (!producto.descuento || producto.descuento <= 0) return producto.precio
+    const precio = parseFloat(producto.precio) || 0
+    if (!precio) return 0
 
-    return Math.round(producto.precio * (1 - producto.descuento / 100))
+    const descuento = parseFloat(producto.descuento) || 0
+    if (descuento <= 0) return precio
+
+    return Math.round(precio * (1 - descuento / 100))
 }
 
 const guardarCambios = async () => {
@@ -143,10 +146,15 @@ const guardarCambios = async () => {
         for (const productoId of productosModificados.value) {
             const producto = productos.value.find(p => p.id === productoId)
             if (producto) {
+                const precio = parseFloat(producto.precio) || 0
+                const descuento = parseFloat(producto.descuento) || 0
+                const precio_descuento = calcularPrecioFinal(producto)
+
                 updates.push({
                     id: producto.id,
-                    precio: producto.precio,
-                    descuento: producto.descuento || 0
+                    precio: precio,
+                    descuento: descuento,
+                    precio_descuento: precio_descuento
                 })
             }
         }
@@ -156,7 +164,8 @@ const guardarCambios = async () => {
                 .from('productos')
                 .update({
                     precio: update.precio,
-                    descuento: update.descuento
+                    descuento: update.descuento,
+                    precio_descuento: update.precio_descuento
                 })
                 .eq('id', update.id)
         )

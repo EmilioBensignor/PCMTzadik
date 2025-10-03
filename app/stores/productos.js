@@ -123,7 +123,7 @@ export const useProductosStore = defineStore('productos', () => {
     try {
       loading.value = true
       error.value = null
-      
+
       const supabase = useSupabaseClient()
       const { data, error: err } = await supabase
         .from('productos')
@@ -134,20 +134,59 @@ export const useProductosStore = defineStore('productos', () => {
         `)
         .eq('id', id)
         .single()
-      
+
       if (err) throw err
-      
+
       currentProduct.value = data
-      
+
       // Cargar imágenes si se especifica
       if (options.includeImages || options.includeAll) {
         await fetchProductosImagenes([id])
       }
-      
+
       return data
     } catch (err) {
       error.value = err.message
       console.error('Error fetching producto:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const fetchAllProductos = async (options = {}) => {
+    try {
+      loading.value = true
+      error.value = null
+
+      const supabase = useSupabaseClient()
+      let query = supabase
+        .from('productos')
+        .select(`
+          *,
+          categorias(id, nombre, icon),
+          subcategorias(id, nombre)
+        `)
+
+      // Aplicar ordenamiento
+      query = query.order('created_at', { ascending: false })
+
+      const { data, error: err } = await query
+
+      if (err) throw err
+
+      productos.value = data || []
+      totalCount.value = data?.length || 0
+
+      // Si se especifica cargar imágenes
+      if (options.includeImages) {
+        await fetchProductosImagenes(data?.map(p => p.id))
+      }
+
+      return data || []
+    } catch (err) {
+      error.value = err.message
+      console.error('Error fetching all productos:', err)
       throw err
     } finally {
       loading.value = false
@@ -406,20 +445,21 @@ export const useProductosStore = defineStore('productos', () => {
     filters,
     sortBy,
     sortOrder,
-    
+
     // Getters
     getProductoById,
     getProductosByCategoria,
     getImagenesByProducto,
-    
+
     // Actions
     fetchProductos,
     fetchProductoById,
+    fetchAllProductos,
     fetchProductosImagenes,
     createProducto,
     updateProducto,
     deleteProducto,
-    
+
     // Filters & Pagination
     setFilter,
     setDynamicFilter,
@@ -429,7 +469,7 @@ export const useProductosStore = defineStore('productos', () => {
     addSubcategoriaFilter,
     removeSubcategoriaFilter,
     setSubcategoriasFilter,
-    
+
     // Helpers
     getImageUrl
   }

@@ -61,7 +61,7 @@ const props = defineProps({
     },
     maxSize: {
         type: Number,
-        default: 5 * 1024 * 1024 // 5MB por defecto
+        default: 5 * 1024 * 1024
     }
 })
 
@@ -137,7 +137,6 @@ const processFile = async (file) => {
         }
         reader.readAsDataURL(file)
 
-        // Simular subida para productos
         await simulateUpload(file)
 
         if (showError.value) {
