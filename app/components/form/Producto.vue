@@ -463,14 +463,17 @@ const handleSubmit = async () => {
             fichaTecnicaPath = productFichaTecnica.value
         }
 
+        const descuentoValue = parseFloat(descuento) || 0
+        const precioValue = parseFloat(precio) || 0
+
         const productoData = {
             categoria_id: selectedCategoryId.value,
             subcategoria_id: selectedSubcategories.value.length > 0 ? selectedSubcategories.value[0] : null,
             titulo,
             condicion,
-            precio: parseFloat(precio) || 0,
-            descuento: parseFloat(descuento) || 0,
-            precio_descuento: precioConDescuento.value || parseFloat(precio) || 0,
+            precio: precioValue,
+            descuento: descuentoValue > 0 ? descuentoValue : null,
+            precio_descuento: descuentoValue > 0 ? precioConDescuento.value : precioValue,
             moneda: moneda !== undefined ? moneda : true,
             oferta: oferta || null,
             destacado: destacado || false,

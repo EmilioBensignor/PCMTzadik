@@ -153,8 +153,8 @@ const guardarCambios = async () => {
                 updates.push({
                     id: producto.id,
                     precio: precio,
-                    descuento: descuento,
-                    precio_descuento: precio_descuento
+                    descuento: descuento > 0 ? descuento : null,
+                    precio_descuento: descuento > 0 ? precio_descuento : precio
                 })
             }
         }
