@@ -18,7 +18,7 @@ export default defineNuxtConfig({
         { name: 'format-detection', content: 'telephone=no' },
         { name: 'mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
-        { name: 'apple-mobile-web-app-title', content: 'Andy Loisch' }
+        { name: 'apple-mobile-web-app-title', content: 'PCM Tzadik' }
       ],
       link: [
         { rel: 'apple-touch-icon', href: '/pwa-icons/apple-touch-icon.png' }
