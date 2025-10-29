@@ -16,10 +16,9 @@
                 ¿Olvidaste tu contraseña?
             </NuxtLink>
 
-            <p class="flex items-center gap-1">Si no tienes una cuenta,<NuxtLink :to="ROUTE_NAMES.REGISTER"
-                    class="text-dark font-light underline">
-                    registrate</NuxtLink>
-            </p>
+            <!-- <p class="flex items-center gap-1">Si no tienes una cuenta,<NuxtLink :to="ROUTE_NAMES.REGISTER"
+                    class="text-dark font-light underline"> registrate</NuxtLink>
+            </p> -->
             <FormError v-if="errorMsg" class="justify-center">
                 {{ errorMsg }}
             </FormError>
