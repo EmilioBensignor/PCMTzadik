@@ -23,7 +23,7 @@
             </FormFieldsContainer>
 
             <FormFieldsContainer>
-                <FormTextField id="precio" v-model="formData.precio" label="Precio" required :error="errors.precio"
+                <FormTextField id="precio" v-model="formData.precio" label="Precio" :error="errors.precio"
                     type="number" step="1" min="0" placeholder="Ingresa el precio" @input="calcularPrecioConDescuento" />
                 <FormTextField id="descuento" v-model.number="formData.descuento" label="Descuento (%)"
                     :error="errors.descuento" type="number" min="0" max="100" step="1"
@@ -34,7 +34,7 @@
                 <FormTextField id="precio_descuento" :model-value="precioConDescuento" label="Precio con Descuento"
                     type="number" step="1" placeholder="0" disabled class="bg-gray-100" />
                 <FormSwitch id="moneda" v-model="formData.moneda" label="Moneda"
-                    left-label="Pesos" right-label="USD" required />
+                    left-label="Pesos" right-label="USD" :disabled="!formData.precio" />
             </FormFieldsContainer>
 
             <FormFieldsContainer>
@@ -471,10 +471,10 @@ const handleSubmit = async () => {
             subcategoria_id: selectedSubcategories.value.length > 0 ? selectedSubcategories.value[0] : null,
             titulo,
             condicion,
-            precio: precioValue,
-            descuento: descuentoValue > 0 ? descuentoValue : null,
-            precio_descuento: descuentoValue > 0 ? precioConDescuento.value : precioValue,
-            moneda: moneda !== undefined ? moneda : true,
+            precio: precioValue > 0 ? precioValue : null,
+            descuento: precioValue > 0 && descuentoValue > 0 ? descuentoValue : null,
+            precio_descuento: precioValue > 0 ? (descuentoValue > 0 ? precioConDescuento.value : precioValue) : null,
+            moneda: precioValue > 0 ? (moneda !== undefined ? moneda : true) : null,
             oferta: oferta || null,
             destacado: destacado || false,
             descripcion_larga,

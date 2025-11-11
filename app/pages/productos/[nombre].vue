@@ -23,7 +23,7 @@
 
                 <div class="flex flex-col gap-3 p-4 flex-grow">
                     <p class="text-2xl font-medium">{{ producto.titulo }}</p>
-                    <p class="text-xl font-bold text-dark">
+                    <p v-if="producto.precio" class="text-xl font-bold text-dark">
                         {{ formatCurrency(producto.precio) }} {{ getCurrencyName(producto.moneda) }}
                     </p>
                     <div class="flex justify-between mt-auto">
@@ -151,7 +151,7 @@ watch(searchQuery, async () => {
 })
 
 const formatCurrency = (amount) => {
-    if (!amount) return 'Precio a consultar'
+    if (!amount) return
     return new Intl.NumberFormat('es-CO', {
         style: 'currency',
         currency: 'COP',
